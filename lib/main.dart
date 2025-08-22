@@ -6,6 +6,7 @@ import 'package:rephelp/screens/students_screen.dart';
 import 'package:rephelp/screens/schedule_screen.dart';
 import 'package:rephelp/screens/finance_screen.dart';
 import 'package:rephelp/screens/analytics_screen.dart';
+import 'package:rephelp/screens/add_student_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,12 +37,12 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1;
 
   // Заглушки экранов
   static const List<Widget> _screens = <Widget>[
-    StudentsScreen(),
     ScheduleScreen(),
+    StudentsScreen(),
     FinanceScreen(),
     AnalyticsScreen(),
   ];
@@ -58,16 +59,31 @@ class _MainScreenState extends State<MainScreen> {
       appBar: AppBar(
         title: const Text('Помощник репетитора'),
         backgroundColor: Colors.blueGrey,
+        actions: _selectedIndex == 1
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AddStudentScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ]
+            : null,
       ),
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Ученики'),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
             label: 'Расписание',
           ),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Ученики'),
           BottomNavigationBarItem(
             icon: Icon(Icons.attach_money),
             label: 'Финансы',

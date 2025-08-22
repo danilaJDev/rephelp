@@ -15,66 +15,69 @@ class AddStudentScreen extends StatefulWidget {
 }
 
 class _AddStudentScreenState extends State<AddStudentScreen> {
-  // Контроллеры для получения текста из полей ввода
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _contactController = TextEditingController();
-  final TextEditingController _priceController = TextEditingController();
-  final TextEditingController _notesController = TextEditingController();
-
-  // Ключ для валидации формы
   final _formKey = GlobalKey<FormState>();
 
-  final List<String> _weekdays = [
-    'Понедельник',
-    'Вторник',
-    'Среда',
-    'Четверг',
-    'Пятница',
-    'Суббота',
-    'Воскресенье',
-  ];
+  // Controllers for text fields
+  final _nameController = TextEditingController();
+  final _surnameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _notesController = TextEditingController();
 
-  String _selectedDay = 'Понедельник';
-  TimeOfDay _selectedTime = TimeOfDay.now();
-  List<Map<String, dynamic>> _schedule = [];
+  // State for messengers and autoPay
+  List<Map<String, String>> _messengers = [];
+  bool _autoPay = false;
+
+  // State for form validity to enable/disable save button
+  bool _isFormValid = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.student != null) {
-      _nameController.text = widget.student!.name;
-      _contactController.text = widget.student!.contact;
-      _priceController.text = widget.student!.price.toString();
-      _notesController.text = widget.student!.notes;
-      _schedule = (jsonDecode(widget.student!.schedule) as List)
-          .map((item) => item as Map<String, dynamic>)
-          .toList();
+      final student = widget.student!;
+      _nameController.text = student.name;
+      _surnameController.text = student.surname ?? '';
+      _phoneController.text = student.phone ?? '';
+      _emailController.text = student.email ?? '';
+      _priceController.text = student.price.toString();
+      _notesController.text = student.notes ?? '';
+      _autoPay = student.autoPay;
+      if (student.messengers != null && student.messengers!.isNotEmpty) {
+        _messengers = (jsonDecode(student.messengers!) as List)
+            .map((item) => Map<String, String>.from(item))
+            .toList();
+      }
     }
+    // Add listeners to check form validity
+    _nameController.addListener(_validateForm);
+    _priceController.addListener(_validateForm);
+    _validateForm(); // Initial validation
   }
 
   @override
   void dispose() {
+    _nameController.removeListener(_validateForm);
+    _priceController.removeListener(_validateForm);
     _nameController.dispose();
-    _contactController.dispose();
+    _surnameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
     _priceController.dispose();
     _notesController.dispose();
     super.dispose();
   }
 
-  void _addScheduleEntry() {
-    setState(() {
-      _schedule.add({
-        'day': _selectedDay,
-        'time':
-            '${_selectedTime.hour}:${_selectedTime.minute.toString().padLeft(2, '0')}',
+  void _validateForm() {
+    final isValid = _nameController.text.isNotEmpty &&
+        _priceController.text.isNotEmpty &&
+        double.tryParse(_priceController.text) != null;
+    if (_isFormValid != isValid) {
+      setState(() {
+        _isFormValid = isValid;
       });
-    });
-  }
-
-  void _removeScheduleEntry(int index) {
-    setState(() {
-      _schedule.removeAt(index);
-    });
+    }
   }
 
   // Метод для сохранения нового ученика в базу данных
@@ -83,10 +86,13 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       final newStudent = Student(
         id: widget.student?.id,
         name: _nameController.text,
-        contact: _contactController.text,
+        surname: _surnameController.text,
+        phone: _phoneController.text,
+        email: _emailController.text,
+        messengers: jsonEncode(_messengers),
         price: double.parse(_priceController.text),
+        autoPay: _autoPay,
         notes: _notesController.text,
-        schedule: jsonEncode(_schedule),
       );
 
       final database = AppDatabase();
@@ -94,9 +100,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
         await database.updateStudent(newStudent);
       } else {
         await database.insertStudent(newStudent);
-        if (_schedule.isNotEmpty) {
-          await _createInitialLessons(newStudent.id!, _schedule);
-        }
       }
 
       if (mounted) {
@@ -105,45 +108,86 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     }
   }
 
-  Future<void> _createInitialLessons(
-    int studentId,
-    List<Map<String, dynamic>> schedule,
-  ) async {
-    final now = DateTime.now();
-    final lessonsToCreate = <Lesson>[];
+  void _showAddMessengerDialog() {
+    String selectedMessenger = 'Telegram';
+    final messengerController = TextEditingController();
 
-    // Генерируем занятия на ближайшие 8 недель
-    for (var i = 0; i < 8; i++) {
-      for (var entry in schedule) {
-        final day = _weekdays.indexOf(entry['day'] as String) + 1;
-        final timeParts = (entry['time'] as String).split(':');
-        final hour = int.parse(timeParts[0]);
-        final minute = int.parse(timeParts[1]);
-
-        final nextLessonDate = _findNextWeekday(now, day, hour, minute);
-        lessonsToCreate.add(
-          Lesson(studentId: studentId, date: nextLessonDate, isPaid: false),
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Добавить мессенджер'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                value: selectedMessenger,
+                items: ['Telegram', 'Viber']
+                    .map((messenger) => DropdownMenuItem(
+                          value: messenger,
+                          child: Text(messenger),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    selectedMessenger = value;
+                  }
+                },
+              ),
+              TextField(
+                controller: messengerController,
+                decoration:
+                    const InputDecoration(labelText: 'Номер/Имя пользователя'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Отмена'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (messengerController.text.isNotEmpty) {
+                  setState(() {
+                    _messengers.add({
+                      'type': selectedMessenger,
+                      'value': messengerController.text,
+                    });
+                  });
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Добавить'),
+            ),
+          ],
         );
-      }
-    }
-    await AppDatabase().insertLessons(lessonsToCreate);
-  }
-
-  DateTime _findNextWeekday(DateTime start, int weekday, int hour, int minute) {
-    var date = start.add(Duration(days: 1));
-    while (date.weekday != weekday) {
-      date = date.add(Duration(days: 1));
-    }
-    return DateTime(date.year, date.month, date.day, hour, minute);
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.student == null ? 'Добавить ученика' : 'Редактировать ученика',
+        leading: TextButton.icon(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          label: const Text('Назад', style: TextStyle(color: Colors.white)),
         ),
+        leadingWidth: 100,
+        title: Text(
+          widget.student == null ? 'Новый ученик' : 'Редактировать',
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.check_circle,
+              color: _isFormValid ? Colors.white : Colors.grey,
+            ),
+            onPressed: _isFormValid ? _saveStudent : null,
+          ),
+        ],
         backgroundColor: Colors.blueGrey,
       ),
       body: Padding(
@@ -152,9 +196,12 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           key: _formKey,
           child: ListView(
             children: [
+              _buildSectionTitle('Общая информация'),
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Имя'),
+                decoration: const InputDecoration(
+                  labelText: 'Имя *',
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Пожалуйста, введите имя';
@@ -163,13 +210,46 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                 },
               ),
               TextFormField(
-                controller: _contactController,
-                decoration: const InputDecoration(labelText: 'Контакты'),
+                controller: _surnameController,
+                decoration: const InputDecoration(labelText: 'Фамилия'),
               ),
+              const SizedBox(height: 20),
+              _buildSectionTitle('Контакты'),
+              TextFormField(
+                controller: _phoneController,
+                decoration: const InputDecoration(labelText: 'Телефон'),
+                keyboardType: TextInputType.phone,
+              ),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Email'),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 10),
+              ..._messengers.map((messenger) {
+                return ListTile(
+                  title: Text('${messenger['type']}: ${messenger['value']}'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () {
+                      setState(() {
+                        _messengers.remove(messenger);
+                      });
+                    },
+                  ),
+                );
+              }),
+              ElevatedButton.icon(
+                onPressed: _showAddMessengerDialog,
+                icon: const Icon(Icons.add),
+                label: const Text('Добавить мессенджер'),
+              ),
+              const SizedBox(height: 20),
+              _buildSectionTitle('Финансы'),
               TextFormField(
                 controller: _priceController,
                 decoration: const InputDecoration(
-                  labelText: 'Цена за занятие (руб)',
+                  labelText: 'Цена за одно занятие *',
                 ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
@@ -182,90 +262,37 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                   return null;
                 },
               ),
+              CheckboxListTile(
+                title: const Text(
+                    'После проведения занятия считать его автоматически оплаченным'),
+                value: _autoPay,
+                onChanged: (bool? value) {
+                  setState(() {
+                    _autoPay = value ?? false;
+                  });
+                },
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+              const SizedBox(height: 20),
+              _buildSectionTitle('Примечания'),
               TextFormField(
                 controller: _notesController,
                 decoration: const InputDecoration(labelText: 'Заметки'),
                 maxLines: 3,
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'Расписание занятий',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              if (_schedule.isNotEmpty)
-                ..._schedule.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final item = entry.value;
-                  return ListTile(
-                    title: Text('${item['day']} в ${item['time']}'),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _removeScheduleEntry(index),
-                    ),
-                  );
-                }),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'День недели',
-                      ),
-                      value: _selectedDay,
-                      items: _weekdays.map((day) {
-                        return DropdownMenuItem<String>(
-                          value: day,
-                          child: Text(day),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedDay = value!;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () async {
-                        final pickedTime = await showTimePicker(
-                          context: context,
-                          initialTime: _selectedTime,
-                        );
-                        if (pickedTime != null) {
-                          setState(() {
-                            _selectedTime = pickedTime;
-                          });
-                        }
-                      },
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Время',
-                          border: OutlineInputBorder(),
-                        ),
-                        child: Text(_selectedTime.format(context)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton.icon(
-                onPressed: _addScheduleEntry,
-                icon: const Icon(Icons.add),
-                label: const Text('Добавить занятие'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _saveStudent,
-                child: Text(widget.student == null ? 'Создать' : 'Сохранить'),
-              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
     );
   }

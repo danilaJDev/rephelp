@@ -1,30 +1,39 @@
-import 'dart:convert'; // Импортируем для работы с JSON
+import 'dart:convert';
 
 class Student {
   final int? id;
   final String name;
-  final String contact;
+  final String? surname;
+  final String? phone;
+  final String? email;
+  final String? messengers; // JSON string for list of messengers
   final double price;
-  final String notes;
-  final String schedule;
+  final bool autoPay;
+  final String? notes;
 
   Student({
     this.id,
     required this.name,
-    required this.contact,
+    this.surname,
+    this.phone,
+    this.email,
+    this.messengers,
     required this.price,
-    this.notes = '',
-    this.schedule = '{}',
+    required this.autoPay,
+    this.notes,
   });
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'name': name,
-      'contact': contact,
+      'surname': surname,
+      'phone': phone,
+      'email': email,
+      'messengers': messengers,
       'price': price,
+      'autoPay': autoPay ? 1 : 0, // Store bool as int
       'notes': notes,
-      'schedule': schedule,
     };
   }
 
@@ -32,10 +41,13 @@ class Student {
     return Student(
       id: map['id'] as int?,
       name: map['name'] as String,
-      contact: map['contact'] as String,
+      surname: map['surname'] as String?,
+      phone: map['phone'] as String?,
+      email: map['email'] as String?,
+      messengers: map['messengers'] as String?,
       price: map['price'] as double,
-      notes: map['notes'] as String,
-      schedule: map['schedule'] as String? ?? '{}',
+      autoPay: map['autoPay'] == 1, // Read int as bool
+      notes: map['notes'] as String?,
     );
   }
 }

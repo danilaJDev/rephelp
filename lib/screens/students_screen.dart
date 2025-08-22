@@ -101,18 +101,37 @@ class _StudentsScreenState extends State<StudentsScreen>
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                TabBar(
-                  controller: _tabController,
-                  labelColor: AppColors.primaryText,
-                  unselectedLabelColor: Colors.grey,
-                  indicator: const UnderlineTabIndicator(
-                    borderSide: BorderSide(color: AppColors.lavender, width: 3),
-                    insets: EdgeInsets.symmetric(horizontal: 100.0),
+                Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.deepPurple,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    ),
                   ),
-                  tabs: const [
-                    Tab(text: 'Активные'),
-                    Tab(text: 'Архив'),
-                  ],
+                  child: TabBar(
+                    controller: _tabController,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.white70,
+                    indicator: const UnderlineTabIndicator(
+                      borderSide: BorderSide(color: Colors.white, width: 3),
+                      insets: EdgeInsets.symmetric(horizontal: 100.0),
+                    ),
+                    tabs: const [
+                      Tab(
+                        child: Text(
+                          'Активные',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      Tab(
+                        child: Text(
+                          'Архив',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -120,6 +139,7 @@ class _StudentsScreenState extends State<StudentsScreen>
                     controller: _searchController,
                     decoration: InputDecoration(
                       hintText: 'Поиск ученика',
+                      hintStyle: const TextStyle(color: AppColors.mutedText),
                       prefixIcon: const Icon(Icons.search),
                       filled: true,
                       fillColor: Colors.white,
@@ -151,7 +171,8 @@ class _StudentsScreenState extends State<StudentsScreen>
             _loadStudents();
           }
         },
-        child: const Icon(Icons.add),
+        backgroundColor: Colors.deepPurple,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -220,36 +241,44 @@ class _StudentsScreenState extends State<StudentsScreen>
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: AlertDialog(
-            title: Text('${student.name} ${student.surname ?? ''}'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Center(
+            child: Column(
               children: [
-                ListTile(
-                  leading: const Icon(Icons.unarchive),
-                  title: const Text('Перенести в активные'),
-                  onTap: () {
-                    _toggleArchiveStatus(student.id!, false);
-                    Navigator.of(context).pop();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.delete),
-                  title: const Text('Удалить'),
-                  onTap: () {
-                    _deleteStudent(student.id!);
-                    Navigator.of(context).pop();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.cancel),
-                  title: const Text('Отмена'),
-                  onTap: () => Navigator.of(context).pop(),
-                ),
+                const Icon(Icons.person, size: 40),
+                const SizedBox(height: 10),
+                Text('${student.name} ${student.surname ?? ''}'),
               ],
             ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.unarchive),
+                title: const Text('Перенести в активные'),
+                onTap: () {
+                  _toggleArchiveStatus(student.id!, false);
+                  Navigator.of(context).pop();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete),
+                title: const Text('Удалить'),
+                onTap: () {
+                  _deleteStudent(student.id!);
+                  Navigator.of(context).pop();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.cancel),
+                title: const Text('Отмена'),
+                onTap: () => Navigator.of(context).pop(),
+              ),
+            ],
           ),
         );
       },

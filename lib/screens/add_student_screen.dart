@@ -70,7 +70,8 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   }
 
   void _validateForm() {
-    final isValid = _nameController.text.isNotEmpty &&
+    final isValid =
+        _nameController.text.isNotEmpty &&
         _priceController.text.isNotEmpty &&
         double.tryParse(_priceController.text) != null;
     if (_isFormValid != isValid) {
@@ -123,10 +124,12 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
               DropdownButtonFormField<String>(
                 value: selectedMessenger,
                 items: ['Telegram', 'Viber']
-                    .map((messenger) => DropdownMenuItem(
-                          value: messenger,
-                          child: Text(messenger),
-                        ))
+                    .map(
+                      (messenger) => DropdownMenuItem(
+                        value: messenger,
+                        child: Text(messenger),
+                      ),
+                    )
                     .toList(),
                 onChanged: (value) {
                   if (value != null) {
@@ -136,8 +139,9 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
               ),
               TextField(
                 controller: messengerController,
-                decoration:
-                    const InputDecoration(labelText: 'Номер/Имя пользователя'),
+                decoration: const InputDecoration(
+                  labelText: 'Номер/Имя пользователя',
+                ),
               ),
             ],
           ),
@@ -176,9 +180,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           label: const Text('Назад', style: TextStyle(color: Colors.white)),
         ),
         leadingWidth: 100,
-        title: Text(
-          widget.student == null ? 'Новый ученик' : 'Редактировать',
-        ),
+        title: Text(widget.student == null ? 'Новый ученик' : 'Редактировать'),
         actions: [
           IconButton(
             icon: Icon(
@@ -199,9 +201,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
               _buildSectionTitle('Общая информация'),
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Имя *',
-                ),
+                decoration: const InputDecoration(labelText: 'Имя *'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Пожалуйста, введите имя';
@@ -264,7 +264,8 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
               ),
               CheckboxListTile(
                 title: const Text(
-                    'После проведения занятия считать его автоматически оплаченным'),
+                  'После проведения занятия считать его автоматически оплаченным',
+                ),
                 value: _autoPay,
                 onChanged: (bool? value) {
                   setState(() {
@@ -275,9 +276,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
               ),
               const SizedBox(height: 20),
               _buildSectionTitle('Примечания'),
-              TextFormField(
-                controller: _notesController,
-              ),
+              TextFormField(controller: _notesController),
             ],
           ),
         ),

@@ -5,6 +5,7 @@ import 'package:rephelp/data/app_database.dart';
 import 'package:rephelp/models/lesson.dart';
 import 'package:rephelp/models/student.dart';
 import 'package:rephelp/screens/add_lesson_screen.dart';
+import 'package:rephelp/utils/app_colors.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -80,7 +81,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Расписание'),
+      appBar: CustomAppBar(title: 'Расписание', backgroundColor: AppColors.lavender),
       body: Column(
         children: [
           TableCalendar(
@@ -135,22 +136,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               )
                             : const Icon(Icons.warning, color: Colors.orange),
                         // Добавляем onTap для редактирования
-  onTap: () async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddLessonScreen(
-          students: _students,
-          selectedDate: _selectedDay!,
-          lessonToEdit: lesson, // Передаем объект занятия для редактирования
-        ),
-      ),
-    );
-    if (result == true) {
-      await _loadAllData();
-      await _loadLessonsForDay(_selectedDay!);
-    }
-  },
+                        onTap: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AddLessonScreen(
+                                students: _students,
+                                selectedDate: _selectedDay!,
+                                lessonToEdit:
+                                    lesson, // Передаем объект занятия для редактирования
+                              ),
+                            ),
+                          );
+                          if (result == true) {
+                            await _loadAllData();
+                            await _loadLessonsForDay(_selectedDay!);
+                          }
+                        },
                         onLongPress: () {
                           // Вызываем диалог подтверждения
                           showDialog(

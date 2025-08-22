@@ -3,8 +3,9 @@ import 'package:rephelp/utils/app_colors.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
+  final Color backgroundColor;
 
-  const CustomAppBar({super.key, required this.title});
+  const CustomAppBar({super.key, required this.title, this.backgroundColor = AppColors.lavender});
 
   @override
   Widget build(BuildContext context) {

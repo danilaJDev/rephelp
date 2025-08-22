@@ -35,6 +35,7 @@ class _StudentsScreenState extends State<StudentsScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -57,27 +58,26 @@ class _StudentsScreenState extends State<StudentsScreen>
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filteredActiveStudents = _activeStudents.where((student) {
-        final fullName = '${student.name} ${student.surname ?? ''}'.toLowerCase();
+        final fullName = '${student.name} ${student.surname ?? ''}'
+            .toLowerCase();
         return fullName.contains(query);
       }).toList();
       _filteredArchivedStudents = _archivedStudents.where((student) {
-        final fullName = '${student.name} ${student.surname ?? ''}'.toLowerCase();
+        final fullName = '${student.name} ${student.surname ?? ''}'
+            .toLowerCase();
         return fullName.contains(query);
       }).toList();
     });
   }
 
   Future<void> _editStudent(Student student) async {
-    // Ждем, пока пользователь вернется с экрана редактирования
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => AddStudentScreen(student: student),
       ),
     );
-    // Проверяем, что виджет все еще в дереве
     if (!mounted) return;
-    // Если результат true, значит данные изменились, и нужно обновить список
     if (result == true) {
       _loadStudents();
     }
@@ -85,12 +85,12 @@ class _StudentsScreenState extends State<StudentsScreen>
 
   Future<void> _toggleArchiveStatus(int id, bool isArchived) async {
     await AppDatabase().setStudentArchived(id, isArchived);
-    _loadStudents(); // Перезагружаем списки
+    _loadStudents();
   }
 
   Future<void> _deleteStudent(int id) async {
     await AppDatabase().deleteStudent(id);
-    _loadStudents(); // Перезагружаем списки
+    _loadStudents();
   }
 
   @override
@@ -101,6 +101,19 @@ class _StudentsScreenState extends State<StudentsScreen>
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                TabBar(
+                  controller: _tabController,
+                  labelColor: AppColors.primaryText,
+                  unselectedLabelColor: Colors.grey,
+                  indicator: const UnderlineTabIndicator(
+                    borderSide: BorderSide(color: AppColors.lavender, width: 3),
+                    insets: EdgeInsets.symmetric(horizontal: 100.0),
+                  ),
+                  tabs: const [
+                    Tab(text: 'Активные'),
+                    Tab(text: 'Архив'),
+                  ],
+                ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextField(
@@ -116,19 +129,6 @@ class _StudentsScreenState extends State<StudentsScreen>
                       ),
                     ),
                   ),
-                ),
-                TabBar(
-                  controller: _tabController,
-                  labelColor: AppColors.primaryText,
-                  unselectedLabelColor: Colors.grey,
-                  indicator: const UnderlineTabIndicator(
-                    borderSide: BorderSide(color: AppColors.lavender, width: 3),
-                    insets: EdgeInsets.symmetric(horizontal: 50.0),
-                  ),
-                  tabs: const [
-                    Tab(text: 'Активные'),
-                    Tab(text: 'Архив'),
-                  ],
                 ),
                 Expanded(
                   child: TabBarView(

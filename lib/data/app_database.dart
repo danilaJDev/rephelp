@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-
 import 'package:rephelp/models/student.dart';
 import 'package:rephelp/models/lesson.dart';
 
@@ -247,7 +246,10 @@ class AppDatabase {
     await db.delete('lessons', where: 'id = ?', whereArgs: [id]);
   }
 
-  Future<void> deleteFutureRecurringLessons(int studentId, DateTime startTime) async {
+  Future<void> deleteFutureRecurringLessons(
+    int studentId,
+    DateTime startTime,
+  ) async {
     final db = await database;
     final startTimeMillis = startTime.millisecondsSinceEpoch;
     // Dart: Mon=1..Sun=7, SQLite's strftime('%w',...): Sun=0..Sat=6

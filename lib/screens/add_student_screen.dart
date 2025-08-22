@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:rephelp/models/student.dart';
-import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:rephelp/widgets/custom_app_bar.dart';
 
@@ -95,7 +94,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       );
 
       final database = AppDatabase();
-      int studentId;
 
       if (studentToSave.id != null) {
         await database.updateStudent(studentToSave);

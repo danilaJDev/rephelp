@@ -258,7 +258,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 },
               ),
               ListTile(
-                title: const Text('Отменить занятие', style: TextStyle(color: Colors.red)),
+                title: const Text(
+                  'Отменить занятие',
+                  style: TextStyle(color: Colors.red),
+                ),
                 onTap: () {
                   Navigator.of(context).pop(); // Close the menu dialog
                   _showCancelOptionsDialog(lesson, student);
@@ -306,7 +309,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               },
             ),
             TextButton(
-              child: const Text('Закрыть', style: TextStyle(color: Colors.grey)),
+              child: const Text(
+                'Закрыть',
+                style: TextStyle(color: Colors.grey),
+              ),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -379,7 +385,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                           await _loadAllData();
                         }
                       },
-                      onLongPress: () => _showCancelOptionsDialog(lesson, student),
+                      onLongPress: () =>
+                          _showCancelOptionsDialog(lesson, student),
                     );
                   },
                 ),

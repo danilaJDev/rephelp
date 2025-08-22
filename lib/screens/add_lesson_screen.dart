@@ -44,8 +44,9 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
       _startTime = TimeOfDay.fromDateTime(lesson.startTime);
       _endTime = TimeOfDay.fromDateTime(lesson.endTime);
       try {
-        _selectedStudent =
-            widget.students.firstWhere((s) => s.id == lesson.studentId);
+        _selectedStudent = widget.students.firstWhere(
+          (s) => s.id == lesson.studentId,
+        );
       } catch (e) {
         _selectedStudent = null;
       }
@@ -56,7 +57,8 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   }
 
   void _validateForm() {
-    final isValid = _selectedStudent != null &&
+    final isValid =
+        _selectedStudent != null &&
         _startTime != null &&
         _endTime != null &&
         (_startTime!.hour < _endTime!.hour ||
@@ -75,7 +77,10 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
     }
 
     final student = _selectedStudent;
-    if (student == null || student.id == null || _startTime == null || _endTime == null) {
+    if (student == null ||
+        student.id == null ||
+        _startTime == null ||
+        _endTime == null) {
       return;
     }
 
@@ -118,10 +123,20 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
           lessonsToSave.add(
             Lesson(
               studentId: student.id!,
-              startTime: DateTime(currentDate.year, currentDate.month,
-                  currentDate.day, _startTime!.hour, _startTime!.minute),
-              endTime: DateTime(currentDate.year, currentDate.month,
-                  currentDate.day, _endTime!.hour, _endTime!.minute),
+              startTime: DateTime(
+                currentDate.year,
+                currentDate.month,
+                currentDate.day,
+                _startTime!.hour,
+                _startTime!.minute,
+              ),
+              endTime: DateTime(
+                currentDate.year,
+                currentDate.month,
+                currentDate.day,
+                _endTime!.hour,
+                _endTime!.minute,
+              ),
             ),
           );
         }
@@ -183,23 +198,36 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
               child: Column(
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
+                    leading: const Icon(
+                      Icons.calendar_today,
+                      color: Colors.deepPurple,
+                    ),
                     title: const Text('Дата'),
                     trailing: Text(DateFormat('dd.MM.yy').format(_lessonDate)),
                     onTap: _selectLessonDate,
                   ),
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   ListTile(
-                    leading: const Icon(Icons.access_time, color: Colors.deepPurple),
+                    leading: const Icon(
+                      Icons.access_time,
+                      color: Colors.deepPurple,
+                    ),
                     title: const Text('Начало'),
-                    trailing: Text(_startTime?.format(context) ?? 'Выберите время'),
+                    trailing: Text(
+                      _startTime?.format(context) ?? 'Выберите время',
+                    ),
                     onTap: () => _selectTime(true),
                   ),
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   ListTile(
-                    leading: const Icon(Icons.access_time_filled, color: Colors.deepPurple),
+                    leading: const Icon(
+                      Icons.access_time_filled,
+                      color: Colors.deepPurple,
+                    ),
                     title: const Text('Конец'),
-                    trailing: Text(_endTime?.format(context) ?? 'Выберите время'),
+                    trailing: Text(
+                      _endTime?.format(context) ?? 'Выберите время',
+                    ),
                     onTap: () => _selectTime(false),
                   ),
                 ],
@@ -213,7 +241,10 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                 borderRadius: BorderRadius.circular(15.0),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
                 child: DropdownButtonFormField<Student>(
                   value: _selectedStudent,
                   onChanged: (Student? newValue) {
@@ -222,8 +253,9 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                     });
                     _validateForm();
                   },
-                  items: widget.students
-                      .map<DropdownMenuItem<Student>>((Student student) {
+                  items: widget.students.map<DropdownMenuItem<Student>>((
+                    Student student,
+                  ) {
                     return DropdownMenuItem<Student>(
                       value: student,
                       child: Text('${student.name} ${student.surname ?? ''}'),
@@ -249,7 +281,9 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
               child: Column(
                 children: [
                   CheckboxListTile(
-                    title: const Text('Продублировать занятия в указанный день (дни) недели'),
+                    title: const Text(
+                      'Продублировать занятия в указанный день (дни) недели',
+                    ),
                     value: _duplicateLessons,
                     onChanged: (bool? value) {
                       setState(() {
@@ -271,7 +305,9 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                       trailing: Text(
                         _duplicationStartDate == null
                             ? 'Выберите дату'
-                            : DateFormat('dd.MM.yy').format(_duplicationStartDate!),
+                            : DateFormat(
+                                'dd.MM.yy',
+                              ).format(_duplicationStartDate!),
                       ),
                       onTap: () => _selectDuplicationDate(true),
                     ),
@@ -285,7 +321,9 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                       trailing: Text(
                         _duplicationEndDate == null
                             ? 'Выберите дату'
-                            : DateFormat('dd.MM.yy').format(_duplicationEndDate!),
+                            : DateFormat(
+                                'dd.MM.yy',
+                              ).format(_duplicationEndDate!),
                       ),
                       onTap: () => _selectDuplicationDate(false),
                     ),
@@ -350,8 +388,11 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   }
 
   Future<void> _selectDuplicationDate(bool isStart) async {
-    final initialDate = (isStart ? _duplicationStartDate : _duplicationEndDate) ?? _lessonDate;
-    final firstDate = isStart ? _lessonDate : _duplicationStartDate ?? _lessonDate;
+    final initialDate =
+        (isStart ? _duplicationStartDate : _duplicationEndDate) ?? _lessonDate;
+    final firstDate = isStart
+        ? _lessonDate
+        : _duplicationStartDate ?? _lessonDate;
 
     final picked = await showDatePicker(
       context: context,
@@ -366,7 +407,8 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         if (isStart) {
           _duplicationStartDate = picked;
           // Если дата окончания была раньше новой даты начала, сбрасываем ее
-          if (_duplicationEndDate != null && _duplicationEndDate!.isBefore(picked)) {
+          if (_duplicationEndDate != null &&
+              _duplicationEndDate!.isBefore(picked)) {
             _duplicationEndDate = null;
           }
         } else {

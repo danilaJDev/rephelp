@@ -30,9 +30,7 @@ class RepHelpApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('ru'),
-      ],
+      supportedLocales: const [Locale('ru')],
       theme: ThemeData(
         // Основная цветовая схема
         primarySwatch: primaryColor,

@@ -390,16 +390,45 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               children: lessonsInSlot.map((lessonData) {
                 final lesson = lessonData['lesson'] as Lesson;
                 final student = lessonData['student'] as Student;
+                final startTime = DateFormat('HH:mm').format(lesson.startTime);
+                final endTime = DateFormat('HH:mm').format(lesson.endTime);
+                final timeRange = '$startTime-$endTime';
+
+                // Format student name
+                String studentDisplayName = student.name;
+                if (student.surname != null && student.surname!.isNotEmpty) {
+                  studentDisplayName += ' ${student.surname![0]}.';
+                }
+
                 final lessonWidget = Card(
                   elevation: 2,
-                  color: Colors.deepPurple[100],
+                  color: Colors.deepPurple,
                   child: Padding(
                     padding: const EdgeInsets.all(4.0),
-                    child: Text(
-                      '${student.name} ${student.surname ?? ''}',
-                      style: const TextStyle(fontSize: 12),
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          studentDisplayName,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          timeRange,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.white70,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
                   ),
                 );

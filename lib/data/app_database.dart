@@ -27,8 +27,12 @@ class AppDatabase {
     String databasesPath = await getDatabasesPath();
     String path = join(databasesPath, 'rephelp_database.db');
 
-    return await openDatabase(path,
-        version: 4, onCreate: _onCreate, onUpgrade: _onUpgrade);
+    return await openDatabase(
+      path,
+      version: 4,
+      onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
+    );
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -94,7 +98,9 @@ class AppDatabase {
           FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
         )
       ''');
-      final List<Map<String, dynamic>> oldLessons = await db.query('lessons_old');
+      final List<Map<String, dynamic>> oldLessons = await db.query(
+        'lessons_old',
+      );
       for (final oldLesson in oldLessons) {
         final startTime = oldLesson['date'];
         final endTime = startTime != null ? startTime + 3600000 : null;

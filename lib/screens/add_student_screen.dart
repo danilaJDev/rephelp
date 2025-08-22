@@ -4,7 +4,6 @@ import 'package:rephelp/models/student.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:rephelp/models/lesson.dart';
-import 'package:rephelp/utils/app_colors.dart';
 import 'package:rephelp/widgets/custom_app_bar.dart';
 
 class AddStudentScreen extends StatefulWidget {

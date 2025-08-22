@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:rephelp/data/app_database.dart';
-import 'package:rephelp/utils/app_colors.dart';
 import 'package:rephelp/widgets/custom_app_bar.dart';
 
 class AnalyticsScreen extends StatefulWidget {
@@ -115,9 +114,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return Card(
       color: Colors.white,
       margin: const EdgeInsets.symmetric(vertical: 4.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
@@ -127,13 +124,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ),
           child: Icon(icon, size: 24, color: Colors.deepPurple),
         ),
-        title: Text(title, style: const TextStyle(color: AppColors.primaryText)),
+        title: Text(title, style: const TextStyle(color: Colors.black)),
         trailing: Text(
           value,
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.primaryText,
+            color: Colors.black,
           ),
         ),
       ),

@@ -1,9 +1,6 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:rephelp/models/student.dart';
-import 'package:rephelp/utils/app_colors.dart';
 import 'package:rephelp/widgets/custom_app_bar.dart';
 
 import 'package:rephelp/screens/add_student_screen.dart';
@@ -140,7 +137,7 @@ class _StudentsScreenState extends State<StudentsScreen>
                     controller: _searchController,
                     decoration: InputDecoration(
                       hintText: 'Поиск ученика',
-                      hintStyle: const TextStyle(color: AppColors.mutedText),
+                      hintStyle: const TextStyle(color: Colors.grey),
                       prefixIcon: const Icon(Icons.search),
                       filled: true,
                       fillColor: Colors.white,
@@ -219,7 +216,7 @@ class _StudentsScreenState extends State<StudentsScreen>
               '${student.name} ${student.surname ?? ''}',
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                color: AppColors.primaryText,
+                color: Colors.black,
               ),
             ),
             onTap: () => _editStudent(student),

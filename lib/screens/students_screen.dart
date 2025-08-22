@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:rephelp/models/student.dart';
+import 'package:rephelp/utils/app_colors.dart';
+import 'package:rephelp/widgets/custom_app_bar.dart';
 
 import 'package:rephelp/screens/add_student_screen.dart';
 
@@ -94,18 +96,7 @@ class _StudentsScreenState extends State<StudentsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: TabBar(
-          controller: _tabController,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: 'Активные'),
-            Tab(text: 'Архив'),
-          ],
-        ),
-      ),
+      appBar: const CustomAppBar(title: 'Ученики'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -125,6 +116,19 @@ class _StudentsScreenState extends State<StudentsScreen>
                       ),
                     ),
                   ),
+                ),
+                TabBar(
+                  controller: _tabController,
+                  labelColor: AppColors.primaryText,
+                  unselectedLabelColor: Colors.grey,
+                  indicator: const UnderlineTabIndicator(
+                    borderSide: BorderSide(color: AppColors.lavender, width: 3),
+                    insets: EdgeInsets.symmetric(horizontal: 50.0),
+                  ),
+                  tabs: const [
+                    Tab(text: 'Активные'),
+                    Tab(text: 'Архив'),
+                  ],
                 ),
                 Expanded(
                   child: TabBarView(
@@ -169,19 +173,33 @@ class _StudentsScreenState extends State<StudentsScreen>
       itemBuilder: (context, index) {
         final student = students[index];
         return Card(
+          color: Colors.white,
           margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15.0),
           ),
           child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Theme.of(context).primaryColorLight,
+            leading: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.lavender,
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Text(
                 '${index + 1}',
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(
+                  color: AppColors.primaryText,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            title: Text('${student.name} ${student.surname ?? ''}'),
+            title: Text(
+              '${student.name} ${student.surname ?? ''}',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryText,
+              ),
+            ),
             onTap: () => _editStudent(student),
             trailing: isArchived
                 ? IconButton(
@@ -189,7 +207,7 @@ class _StudentsScreenState extends State<StudentsScreen>
                     onPressed: () => _showArchiveMenu(context, student),
                   )
                 : IconButton(
-                    icon: const Icon(Icons.archive),
+                    icon: const Icon(Icons.archive, color: AppColors.lavender),
                     onPressed: () => _toggleArchiveStatus(student.id!, true),
                   ),
           ),

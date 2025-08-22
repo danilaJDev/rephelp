@@ -271,6 +271,25 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 },
               ),
               ListTile(
+                title: const Text('Редактировать'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddLessonScreen(
+                        students: _students,
+                        selectedDate: lesson.startTime,
+                        lessonToEdit: lesson,
+                      ),
+                    ),
+                  );
+                  if (result == true) {
+                    await _loadAllData();
+                  }
+                },
+              ),
+              ListTile(
                 title: const Text(
                   'Отменить занятие',
                   style: TextStyle(color: Colors.red),

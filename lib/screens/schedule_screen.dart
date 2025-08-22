@@ -261,7 +261,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 title: const Text('Отменить занятие', style: TextStyle(color: Colors.red)),
                 onTap: () {
                   Navigator.of(context).pop(); // Close the menu dialog
-                  _showDeleteConfirmationDialog(lesson);
+                  _showCancelOptionsDialog(lesson, student);
                 },
               ),
               const Divider(height: 1),
@@ -278,27 +278,38 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     );
   }
 
-  void _showDeleteConfirmationDialog(Lesson lesson) {
+  void _showCancelOptionsDialog(Lesson lesson, Student student) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Удалить занятие?'),
-          content: const Text(
-            'Вы уверены, что хотите удалить это занятие?',
-          ),
+          title: const Text('Отменить занятие'),
+          content: const Text('Как вы хотите отменить занятие?'),
           actions: <Widget>[
             TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Отмена'),
-            ),
-            TextButton(
+              child: const Text('Только это'),
               onPressed: () async {
+                Navigator.of(context).pop(); // Close the options dialog
                 await _database.deleteLesson(lesson.id!);
                 await _loadAllData();
-                Navigator.pop(context);
               },
-              child: const Text('Удалить', style: TextStyle(color: Colors.red)),
+            ),
+            TextButton(
+              child: const Text('Это и все последующие'),
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close the options dialog
+                await _database.deleteFutureRecurringLessons(
+                  student.id!,
+                  lesson.startTime,
+                );
+                await _loadAllData();
+              },
+            ),
+            TextButton(
+              child: const Text('Закрыть', style: TextStyle(color: Colors.grey)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
             ),
           ],
         );
@@ -368,7 +379,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                           await _loadAllData();
                         }
                       },
-                      onLongPress: () => _showDeleteConfirmationDialog(lesson),
+                      onLongPress: () => _showCancelOptionsDialog(lesson, student),
                     );
                   },
                 ),

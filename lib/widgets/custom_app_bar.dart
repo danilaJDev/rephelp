@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:rephelp/utils/app_colors.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final Color backgroundColor;
 
-  const CustomAppBar({super.key, required this.title, this.backgroundColor = AppColors.lavender});
+  const CustomAppBar({super.key, required this.title, this.backgroundColor = Colors.deepPurple});
 
   @override
   Widget build(BuildContext context) {
@@ -13,13 +12,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Text(
         title,
         style: const TextStyle(
-          color: AppColors.primaryText,
+          color: Colors.white,
           fontWeight: FontWeight.bold,
         ),
       ),
-      backgroundColor: AppColors.lavender,
+      backgroundColor: backgroundColor,
       elevation: 0,
-      centerTitle: true,
+      centerTitle: false,
     );
   }
 

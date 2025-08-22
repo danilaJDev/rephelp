@@ -41,10 +41,6 @@ class _FinanceScreenState extends State<FinanceScreen> {
       }
     }
 
-    data.sort(
-      (a, b) => (b['start_time'] as int).compareTo(a['start_time'] as int),
-    );
-
     if (!mounted) return;
     setState(() {
       _financialData = data;
@@ -52,6 +48,11 @@ class _FinanceScreenState extends State<FinanceScreen> {
       _unpaidAmount = unpaid;
       _isLoading = false;
     });
+  }
+
+  Future<void> _toggleLessonPaidStatus(int lessonId, bool isPaid) async {
+    await _database.updateLessonIsPaid(lessonId, !isPaid);
+    await _loadFinancialData();
   }
 
   @override
@@ -141,6 +142,10 @@ class _FinanceScreenState extends State<FinanceScreen> {
 
         return Card(
           child: ListTile(
+            onTap: () => _toggleLessonPaidStatus(
+              lesson['id'] as int,
+              isPaid,
+            ),
             leading: Icon(
               isPaid ? Icons.check_circle : Icons.cancel,
               color: isPaid ? Colors.green : Colors.red,

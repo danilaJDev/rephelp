@@ -28,7 +28,7 @@ class AppDatabase {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -57,6 +57,7 @@ class AppDatabase {
         start_time INTEGER,
         end_time INTEGER,
         is_paid INTEGER,
+        notes TEXT,
         FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
       )
     ''');
@@ -112,6 +113,9 @@ class AppDatabase {
         });
       }
       await db.execute('DROP TABLE lessons_old');
+    }
+    if (oldVersion < 5) {
+      await db.execute('ALTER TABLE lessons ADD COLUMN notes TEXT');
     }
   }
 

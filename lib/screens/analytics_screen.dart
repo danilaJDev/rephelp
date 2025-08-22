@@ -93,7 +93,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             color: Colors.deepPurple,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, size: 28, color: Colors.deepPurple),
+          child: Icon(icon, size: 28, color: Colors.white),
         ),
         title: Text(title, style: const TextStyle(fontSize: 16)),
         trailing: Text(

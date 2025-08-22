@@ -117,12 +117,14 @@ class _StudentsScreenState extends State<StudentsScreen>
                     ),
                     tabs: const [
                       Tab(
+                        icon: Icon(Icons.person),
                         child: Text(
                           'Активные',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
                       Tab(
+                        icon: Icon(Icons.archive),
                         child: Text(
                           'Архив',
                           style: TextStyle(fontWeight: FontWeight.bold),
@@ -198,19 +200,9 @@ class _StudentsScreenState extends State<StudentsScreen>
             borderRadius: BorderRadius.circular(15.0),
           ),
           child: ListTile(
-            leading: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.deepPurple,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '${index + 1}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            leading: CircleAvatar(
+              backgroundColor: Colors.deepPurple,
+              child: Icon(Icons.person, color: Colors.white),
             ),
             title: Text(
               '${student.name} ${student.surname ?? ''}',

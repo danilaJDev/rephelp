@@ -27,6 +27,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   late DateTime _lessonDate;
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
+  late TextEditingController _notesController;
   bool _isFormValid = false;
 
   bool _duplicateLessons = false;
@@ -37,12 +38,14 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   void initState() {
     super.initState();
     _lessonDate = widget.selectedDate;
+    _notesController = TextEditingController();
 
     if (widget.lessonToEdit != null) {
       final lesson = widget.lessonToEdit!;
       _lessonDate = lesson.startTime;
       _startTime = TimeOfDay.fromDateTime(lesson.startTime);
       _endTime = TimeOfDay.fromDateTime(lesson.endTime);
+      _notesController.text = lesson.notes ?? '';
       try {
         _selectedStudent = widget.students.firstWhere(
           (s) => s.id == lesson.studentId,
@@ -110,6 +113,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         startTime: lessonStartTime,
         endTime: lessonEndTime,
         isPaid: widget.lessonToEdit!.isPaid,
+        notes: _notesController.text,
       );
       await database.updateLesson(lessonToUpdate);
     } else if (_duplicateLessons &&
@@ -137,6 +141,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                 _endTime!.hour,
                 _endTime!.minute,
               ),
+              notes: _notesController.text,
             ),
           );
         }
@@ -152,6 +157,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
           studentId: student.id!,
           startTime: lessonStartTime,
           endTime: lessonEndTime,
+          notes: _notesController.text,
         ),
       );
       await database.insertLessons(lessonsToSave);
@@ -268,6 +274,25 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                   isExpanded: true,
                   validator: (value) =>
                       value == null ? 'Пожалуйста, выберите ученика' : null,
+                ),
+              ),
+            ),
+            _buildSectionTitle('Примечания'),
+            Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextFormField(
+                  controller: _notesController,
+                  decoration: const InputDecoration(
+                    hintText: 'Добавьте примечание к занятию...',
+                    border: InputBorder.none,
+                  ),
+                  maxLines: 3,
                 ),
               ),
             ),

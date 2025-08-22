@@ -72,7 +72,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
               itemBuilder: (context, index) {
                 final student = _students[index];
                 return ListTile(
-                  title: Text(student.name),
+                  title: Text('${student.name} ${student.surname ?? ''}'),
                   subtitle: Text('Цена: ${student.price} руб.'),
                   onTap: () {
                     // При коротком нажатии открываем экран для редактирования
@@ -108,18 +108,6 @@ class _StudentsScreenState extends State<StudentsScreen> {
                 );
               },
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddStudentScreen()),
-          );
-          if (result == true) {
-            _loadStudents();
-          }
-        },
-        child: const Icon(Icons.add),
-      ),
     );
   }
 }

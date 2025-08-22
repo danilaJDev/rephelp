@@ -53,10 +53,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     final lessons = await _database.getLessonsByDate(day);
     final List<Map<String, dynamic>> lessonsWithStudents = [];
     for (var lesson in lessons) {
-      final student = _students.firstWhere(
-        (s) => s.id == lesson.studentId,
-        orElse: () => Student(name: 'Unknown', surname: 'Student'),
-      );
+      final student = _students.firstWhere((s) => s.id == lesson.studentId);
       lessonsWithStudents.add({'lesson': lesson, 'student': student});
     }
     if (!mounted) return;
@@ -157,7 +154,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       itemBuilder: (context, index) {
         final day = sortedDays[index];
         final lessons = _allLessons[day]!;
-        final formattedDate = DateFormat('dd.MM.yyyy, EEEE', 'ru_RU').format(day);
+        final formattedDate = DateFormat(
+          'dd.MM.yyyy, EEEE',
+          'ru_RU',
+        ).format(day);
 
         return Column(
           children: [
@@ -174,7 +174,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             ...lessons.map((lesson) {
               final student = _students.firstWhere(
                 (s) => s.id == lesson.studentId,
-                orElse: () => Student(name: 'Unknown', surname: 'Student'),
               );
               return _buildLessonCard(lesson, student);
             }).toList(),
@@ -186,7 +185,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
   Widget _buildLessonCard(Lesson lesson, Student student) {
     final startTime = DateFormat('HH:mm').format(lesson.date);
-    final endTime = DateFormat('HH:mm').format(lesson.date.add(const Duration(hours: 1)));
+    final endTime = DateFormat(
+      'HH:mm',
+    ).format(lesson.date.add(const Duration(hours: 1)));
     final studentName = '${student.name} ${student.surname?[0] ?? ''}.';
 
     return Card(

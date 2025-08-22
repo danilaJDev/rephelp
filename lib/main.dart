@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -24,6 +25,14 @@ class RepHelpApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'RepHelp',
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('ru'),
+      ],
       theme: ThemeData(
         // Основная цветовая схема
         primarySwatch: primaryColor,

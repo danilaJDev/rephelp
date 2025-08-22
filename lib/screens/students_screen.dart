@@ -95,9 +95,11 @@ class _StudentsScreenState extends State<StudentsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ученики'),
-        bottom: TabBar(
+        title: TabBar(
           controller: _tabController,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          indicatorColor: Colors.white,
           tabs: const [
             Tab(text: 'Активные'),
             Tab(text: 'Архив'),
@@ -113,10 +115,13 @@ class _StudentsScreenState extends State<StudentsScreen>
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      labelText: 'Поиск',
+                      hintText: 'Поиск ученика',
                       prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: Colors.white,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
+                        borderRadius: BorderRadius.circular(30.0),
+                        borderSide: BorderSide.none,
                       ),
                     ),
                   ),
@@ -159,22 +164,35 @@ class _StudentsScreenState extends State<StudentsScreen>
       );
     }
     return ListView.builder(
+      padding: const EdgeInsets.only(top: 8.0),
       itemCount: students.length,
       itemBuilder: (context, index) {
         final student = students[index];
-        return ListTile(
-          title: Text('${student.name} ${student.surname ?? ''}'),
-          subtitle: Text('Цена: ${student.price} руб.'),
-          onTap: () => _editStudent(student),
-          trailing: isArchived
-              ? IconButton(
-                  icon: const Icon(Icons.more_vert),
-                  onPressed: () => _showArchiveMenu(context, student),
-                )
-              : IconButton(
-                  icon: const Icon(Icons.archive),
-                  onPressed: () => _toggleArchiveStatus(student.id!, true),
-                ),
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
+          ),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Theme.of(context).primaryColorLight,
+              child: Text(
+                '${index + 1}',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+            title: Text('${student.name} ${student.surname ?? ''}'),
+            onTap: () => _editStudent(student),
+            trailing: isArchived
+                ? IconButton(
+                    icon: const Icon(Icons.more_vert),
+                    onPressed: () => _showArchiveMenu(context, student),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.archive),
+                    onPressed: () => _toggleArchiveStatus(student.id!, true),
+                  ),
+          ),
         );
       },
     );

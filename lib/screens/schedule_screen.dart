@@ -42,11 +42,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     final allStudents = await _database.getStudents();
     final allLessons = await _database.getAllLessons();
     if (!mounted) return;
-    await _loadLessonsForDay(_selectedDay!);
     setState(() {
       _students = allStudents;
       _allLessons = _groupAndPairLessons(allLessons, allStudents);
     });
+    await _loadLessonsForDay(_selectedDay!);
   }
 
   Future<void> _loadLessonsForDay(DateTime day) async {

@@ -22,49 +22,128 @@ class AddLessonScreen extends StatefulWidget {
 }
 
 class _AddLessonScreenState extends State<AddLessonScreen> {
+  final _formKey = GlobalKey<FormState>();
   Student? _selectedStudent;
+  late DateTime _lessonDate;
+  TimeOfDay? _startTime;
+  TimeOfDay? _endTime;
+  bool _isFormValid = false;
+
+  bool _duplicateLessons = false;
+  DateTime? _duplicationStartDate;
+  DateTime? _duplicationEndDate;
 
   @override
   void initState() {
     super.initState();
+    _lessonDate = widget.selectedDate;
+
     if (widget.lessonToEdit != null) {
+      final lesson = widget.lessonToEdit!;
+      _lessonDate = lesson.startTime;
+      _startTime = TimeOfDay.fromDateTime(lesson.startTime);
+      _endTime = TimeOfDay.fromDateTime(lesson.endTime);
       try {
-        _selectedStudent = widget.students.firstWhere(
-          (s) => s.id == widget.lessonToEdit!.studentId,
-        );
+        _selectedStudent =
+            widget.students.firstWhere((s) => s.id == lesson.studentId);
       } catch (e) {
-        if (widget.students.isNotEmpty) {
-          _selectedStudent = widget.students.first;
-        }
+        _selectedStudent = null;
       }
     } else if (widget.students.isNotEmpty) {
       _selectedStudent = widget.students.first;
     }
+    _validateForm();
+  }
+
+  void _validateForm() {
+    final isValid = _selectedStudent != null &&
+        _startTime != null &&
+        _endTime != null &&
+        (_startTime!.hour < _endTime!.hour ||
+            (_startTime!.hour == _endTime!.hour &&
+                _startTime!.minute < _endTime!.minute));
+    if (_isFormValid != isValid) {
+      setState(() {
+        _isFormValid = isValid;
+      });
+    }
   }
 
   Future<void> _saveLesson() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     final student = _selectedStudent;
-    if (student != null && student.id != null) {
-      final AppDatabase database = AppDatabase();
-      final newLesson = Lesson(
-        id: widget.lessonToEdit?.id,
+    if (student == null || student.id == null || _startTime == null || _endTime == null) {
+      return;
+    }
+
+    final database = AppDatabase();
+    final lessonsToSave = <Lesson>[];
+
+    final lessonStartTime = DateTime(
+      _lessonDate.year,
+      _lessonDate.month,
+      _lessonDate.day,
+      _startTime!.hour,
+      _startTime!.minute,
+    );
+    final lessonEndTime = DateTime(
+      _lessonDate.year,
+      _lessonDate.month,
+      _lessonDate.day,
+      _endTime!.hour,
+      _endTime!.minute,
+    );
+
+    // If we are just editing, we ignore the duplication logic.
+    if (widget.lessonToEdit != null) {
+      final lessonToUpdate = Lesson(
+        id: widget.lessonToEdit!.id,
         studentId: student.id!,
-        startTime: widget.selectedDate,
-        endTime: widget.selectedDate.add(const Duration(hours: 1)),
-        isPaid: widget.lessonToEdit?.isPaid ?? false,
+        startTime: lessonStartTime,
+        endTime: lessonEndTime,
+        isPaid: widget.lessonToEdit!.isPaid,
       );
-      if (newLesson.id != null) {
-        await database.updateLesson(newLesson);
-      } else {
-        await database.insertLesson(newLesson);
+      await database.updateLesson(lessonToUpdate);
+    } else if (_duplicateLessons &&
+        _duplicationStartDate != null &&
+        _duplicationEndDate != null) {
+      // Duplication logic
+      var currentDate = _duplicationStartDate!;
+      while (currentDate.isBefore(_duplicationEndDate!) ||
+          currentDate.isAtSameMomentAs(_duplicationEndDate!)) {
+        if (currentDate.weekday == _lessonDate.weekday) {
+          lessonsToSave.add(
+            Lesson(
+              studentId: student.id!,
+              startTime: DateTime(currentDate.year, currentDate.month,
+                  currentDate.day, _startTime!.hour, _startTime!.minute),
+              endTime: DateTime(currentDate.year, currentDate.month,
+                  currentDate.day, _endTime!.hour, _endTime!.minute),
+            ),
+          );
+        }
+        currentDate = currentDate.add(const Duration(days: 1));
       }
-      if (mounted) {
-        Navigator.pop(context, true);
+      if (lessonsToSave.isNotEmpty) {
+        await database.insertLessons(lessonsToSave);
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Пожалуйста, выберите ученика.')),
+      // Single lesson logic
+      lessonsToSave.add(
+        Lesson(
+          studentId: student.id!,
+          startTime: lessonStartTime,
+          endTime: lessonEndTime,
+        ),
       );
+      await database.insertLessons(lessonsToSave);
+    }
+
+    if (mounted) {
+      Navigator.pop(context, true);
     }
   }
 
@@ -81,58 +160,220 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.check, color: Colors.white),
-            onPressed: _saveLesson,
+            icon: Icon(
+              Icons.check,
+              color: _isFormValid ? Colors.white : Colors.white54,
+            ),
+            onPressed: _isFormValid ? _saveLesson : null,
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(10.0),
-        children: [
-          Card(
-            color: Colors.white,
-            margin: const EdgeInsets.symmetric(vertical: 4.0),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15.0),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(10.0),
+          children: [
+            _buildSectionTitle('Время и дата'),
+            Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Дата: ${DateFormat.yMMMd('ru').format(widget.selectedDate)}',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ListTile(
+                    leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
+                    title: const Text('Дата'),
+                    trailing: Text(DateFormat('dd.MM.yy').format(_lessonDate)),
+                    onTap: _selectLessonDate,
                   ),
-                  const SizedBox(height: 20),
-                  const Text('Ученик:', style: TextStyle(fontSize: 16)),
-                  const SizedBox(height: 8),
-                  if (widget.students.isNotEmpty)
-                    DropdownButtonFormField<Student>(
-                      value: _selectedStudent,
-                      onChanged: (Student? newValue) {
-                        setState(() {
-                          _selectedStudent = newValue;
-                        });
-                      },
-                      items: widget.students.map<DropdownMenuItem<Student>>((
-                        Student student,
-                      ) {
-                        return DropdownMenuItem<Student>(
-                          value: student,
-                          child: Text('${student.name} ${student.surname ?? ''}'),
-                        );
-                      }).toList(),
-                      isExpanded: true,
-                    )
-                  else
-                    const Text('Нет доступных учеников.'),
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  ListTile(
+                    leading: const Icon(Icons.access_time, color: Colors.deepPurple),
+                    title: const Text('Начало'),
+                    trailing: Text(_startTime?.format(context) ?? 'Выберите время'),
+                    onTap: () => _selectTime(true),
+                  ),
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  ListTile(
+                    leading: const Icon(Icons.access_time_filled, color: Colors.deepPurple),
+                    title: const Text('Конец'),
+                    trailing: Text(_endTime?.format(context) ?? 'Выберите время'),
+                    onTap: () => _selectTime(false),
+                  ),
                 ],
               ),
             ),
-          ),
-        ],
+            _buildSectionTitle('Ученик'),
+            Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: DropdownButtonFormField<Student>(
+                  value: _selectedStudent,
+                  onChanged: (Student? newValue) {
+                    setState(() {
+                      _selectedStudent = newValue;
+                    });
+                    _validateForm();
+                  },
+                  items: widget.students
+                      .map<DropdownMenuItem<Student>>((Student student) {
+                    return DropdownMenuItem<Student>(
+                      value: student,
+                      child: Text('${student.name} ${student.surname ?? ''}'),
+                    );
+                  }).toList(),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'Выберите ученика',
+                  ),
+                  isExpanded: true,
+                  validator: (value) =>
+                      value == null ? 'Пожалуйста, выберите ученика' : null,
+                ),
+              ),
+            ),
+            _buildSectionTitle('Дублирование'),
+            Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: Column(
+                children: [
+                  CheckboxListTile(
+                    title: const Text('Продублировать занятия в указанный день (дни) недели'),
+                    value: _duplicateLessons,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        _duplicateLessons = value ?? false;
+                      });
+                      _validateForm();
+                    },
+                    controlAffinity: ListTileControlAffinity.leading,
+                    activeColor: Colors.deepPurple,
+                  ),
+                  if (_duplicateLessons) ...[
+                    const Divider(height: 1, indent: 16, endIndent: 16),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.calendar_today,
+                        color: Colors.deepPurple,
+                      ),
+                      title: const Text('С'),
+                      trailing: Text(
+                        _duplicationStartDate == null
+                            ? 'Выберите дату'
+                            : DateFormat('dd.MM.yy').format(_duplicationStartDate!),
+                      ),
+                      onTap: () => _selectDuplicationDate(true),
+                    ),
+                    const Divider(height: 1, indent: 16, endIndent: 16),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.calendar_today,
+                        color: Colors.deepPurple,
+                      ),
+                      title: const Text('По'),
+                      trailing: Text(
+                        _duplicationEndDate == null
+                            ? 'Выберите дату'
+                            : DateFormat('dd.MM.yy').format(_duplicationEndDate!),
+                      ),
+                      onTap: () => _selectDuplicationDate(false),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 24, 8, 8),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          color: Colors.deepPurple,
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectLessonDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _lessonDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+      locale: const Locale('ru'),
+    );
+    if (picked != null && picked != _lessonDate) {
+      setState(() {
+        _lessonDate = picked;
+      });
+      _validateForm();
+    }
+  }
+
+  Future<void> _selectTime(bool isStartTime) async {
+    final initialTime = isStartTime
+        ? _startTime
+        : _endTime ?? _startTime ?? TimeOfDay.now();
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime ?? TimeOfDay.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStartTime) {
+          _startTime = picked;
+        } else {
+          _endTime = picked;
+        }
+      });
+      _validateForm();
+    }
+  }
+
+  Future<void> _selectDuplicationDate(bool isStart) async {
+    final initialDate = (isStart ? _duplicationStartDate : _duplicationEndDate) ?? _lessonDate;
+    final firstDate = isStart ? _lessonDate : _duplicationStartDate ?? _lessonDate;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: DateTime(2101),
+      locale: const Locale('ru'),
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (isStart) {
+          _duplicationStartDate = picked;
+          // Если дата окончания была раньше новой даты начала, сбрасываем ее
+          if (_duplicationEndDate != null && _duplicationEndDate!.isBefore(picked)) {
+            _duplicationEndDate = null;
+          }
+        } else {
+          _duplicationEndDate = picked;
+        }
+      });
+      _validateForm();
+    }
   }
 }

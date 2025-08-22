@@ -58,7 +58,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         final student = _students.firstWhere((s) => s.id == lesson.studentId);
         lessonsWithStudents.add({'lesson': lesson, 'student': student});
       } catch (e) {
-        // Student not found for this lesson, maybe log this error
         print(
           'Error: Student with id ${lesson.studentId} not found for lesson ${lesson.id}',
         );
@@ -247,14 +246,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               ListTile(
                 title: const Text('Ученик отсутствовал'),
                 onTap: () {
-                  // TODO: Implement absence logic
                   Navigator.of(context).pop();
                 },
               ),
               ListTile(
                 title: const Text('Занятие оплачено'),
                 onTap: () {
-                  // TODO: Implement payment logic
                   Navigator.of(context).pop();
                 },
               ),
@@ -264,7 +261,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   style: TextStyle(color: Colors.red),
                 ),
                 onTap: () {
-                  Navigator.of(context).pop(); // Close the menu dialog
+                  Navigator.of(context).pop();
                   _showCancelOptionsDialog(lesson, student);
                 },
               ),
@@ -293,7 +290,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             TextButton(
               child: const Text('Только это'),
               onPressed: () async {
-                Navigator.of(context).pop(); // Close the options dialog
+                Navigator.of(context).pop();
                 await _database.deleteLesson(lesson.id!);
                 await _loadAllData();
               },
@@ -301,7 +298,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             TextButton(
               child: const Text('Это и все последующие'),
               onPressed: () async {
-                Navigator.of(context).pop(); // Close the options dialog
+                Navigator.of(context).pop();
                 await _database.deleteFutureRecurringLessons(
                   student.id!,
                   lesson.startTime,
@@ -363,7 +360,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     return lessonsForDay.where((lessonData) {
       final lesson = lessonData['lesson'] as Lesson;
       final lessonTime = TimeOfDay.fromDateTime(lesson.startTime);
-      // Check if lesson starts within this hour slot
       return lessonTime.hour == time.hour;
     }).toList();
   }
@@ -388,12 +384,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           if (lessonsInSlot.isEmpty) {
             return DragTarget<Lesson>(
               builder: (context, candidateData, rejectedData) {
-                return Container(height: 60); // Empty cell
+                return Container(height: 60);
               },
               onWillAccept: (data) => true,
-              onAccept: (data) {
-                // Handle lesson drop here
-              },
+              onAccept: (data) {},
             );
           }
           return Container(
@@ -508,15 +502,25 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       (index) => TimeOfDay(hour: 8 + index, minute: 0),
     );
 
+    final displayedDays = daysToDisplay
+        .map((d) => DateTime(d.year, d.month, d.day))
+        .toSet();
     final viewLessons = <DateTime, List<Map<String, dynamic>>>{};
-    final firstDay = daysToDisplay.first;
-    final lastDay = daysToDisplay.last;
     _allLessons.forEach((day, lessons) {
-      final dayOnly = DateTime(day.year, day.month, day.day);
-      if (!dayOnly.isBefore(firstDay) && !dayOnly.isAfter(lastDay)) {
-        viewLessons[dayOnly] = lessons;
+      if (displayedDays.contains(day)) {
+        viewLessons[day] = lessons;
       }
     });
+
+    // final viewLessons = <DateTime, List<Map<String, dynamic>>>{};
+    // final firstDay = daysToDisplay.first;
+    // final lastDay = daysToDisplay.last;
+    // _allLessons.forEach((day, lessons) {
+    //   final dayOnly = DateTime(day.year, day.month, day.day);
+    //   if (!dayOnly.isBefore(firstDay) && !dayOnly.isAfter(lastDay)) {
+    //     viewLessons[dayOnly] = lessons;
+    //   }
+    // });
 
     return Column(
       children: [

@@ -11,26 +11,57 @@ class StudentsScreen extends StatefulWidget {
   State<StudentsScreen> createState() => _StudentsScreenState();
 }
 
-class _StudentsScreenState extends State<StudentsScreen> {
-  // Список учеников, которые мы будем получать из базы данных
-  List<Student> _students = [];
-  bool _isLoading = true; // Флаг для отображения индикатора загрузки
+class _StudentsScreenState extends State<StudentsScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final TextEditingController _searchController = TextEditingController();
+
+  List<Student> _activeStudents = [];
+  List<Student> _filteredActiveStudents = [];
+  List<Student> _archivedStudents = [];
+  List<Student> _filteredArchivedStudents = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadStudents(); // Загружаем учеников при инициализации экрана
+    _tabController = TabController(length: 2, vsync: this);
+    _loadStudents();
+    _searchController.addListener(_filterStudents);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   // Метод для загрузки учеников из базы данных
   Future<void> _loadStudents() async {
     final database = AppDatabase();
-    final students = await database.getStudents();
-    // Проверяем, что виджет все еще в дереве, прежде чем вызывать setState
+    final activeStudents = await database.getStudents(isArchived: false);
+    final archivedStudents = await database.getStudents(isArchived: true);
     if (!mounted) return;
     setState(() {
-      _students = students;
+      _activeStudents = activeStudents;
+      _filteredActiveStudents = activeStudents;
+      _archivedStudents = archivedStudents;
+      _filteredArchivedStudents = archivedStudents;
       _isLoading = false;
+    });
+  }
+
+  void _filterStudents() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredActiveStudents = _activeStudents.where((student) {
+        final fullName = '${student.name} ${student.surname ?? ''}'.toLowerCase();
+        return fullName.contains(query);
+      }).toList();
+      _filteredArchivedStudents = _archivedStudents.where((student) {
+        final fullName = '${student.name} ${student.surname ?? ''}'.toLowerCase();
+        return fullName.contains(query);
+      }).toList();
     });
   }
 
@@ -50,64 +81,142 @@ class _StudentsScreenState extends State<StudentsScreen> {
     }
   }
 
+  Future<void> _toggleArchiveStatus(int id, bool isArchived) async {
+    await AppDatabase().setStudentArchived(id, isArchived);
+    _loadStudents(); // Перезагружаем списки
+  }
+
   Future<void> _deleteStudent(int id) async {
     await AppDatabase().deleteStudent(id);
-    // Обновляем список учеников в памяти без повторного запроса к БД
-    setState(() {
-      _students.removeWhere((student) => student.id == id);
-    });
+    _loadStudents(); // Перезагружаем списки
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Ученики'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Активные'),
+            Tab(text: 'Архив'),
+          ],
+        ),
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _students.isEmpty
-          ? const Center(
-              child: Text('Ученики не найдены. Добавьте нового ученика.'),
-            )
-          : ListView.builder(
-              itemCount: _students.length,
-              itemBuilder: (context, index) {
-                final student = _students[index];
-                return ListTile(
-                  title: Text('${student.name} ${student.surname ?? ''}'),
-                  subtitle: Text('Цена: ${student.price} руб.'),
-                  onTap: () {
-                    // При коротком нажатии открываем экран для редактирования
-                    _editStudent(student);
-                  },
-                  onLongPress: () {
-                    // При долгом нажатии показываем диалог удаления
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text('Удалить ученика?'),
-                          content: Text(
-                            'Вы уверены, что хотите удалить ${student.name}?',
-                          ),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Отмена'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                _deleteStudent(student.id!);
-                                Navigator.pop(context); // Закрываем диалог
-                              },
-                              child: const Text('Удалить'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                );
-              },
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      labelText: 'Поиск',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildStudentList(_filteredActiveStudents, false),
+                      _buildStudentList(_filteredArchivedStudents, true),
+                    ],
+                  ),
+                ),
+              ],
             ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddStudentScreen()),
+          );
+          if (result == true) {
+            _loadStudents();
+          }
+        },
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildStudentList(List<Student> students, bool isArchived) {
+    if (_searchController.text.isNotEmpty && students.isEmpty) {
+      return const Center(child: Text('Совпадений не найдено'));
+    }
+    if (students.isEmpty) {
+      return Center(
+        child: Text(
+          isArchived ? 'Архив пуст' : 'Ученики не найдены. Добавьте нового.',
+        ),
+      );
+    }
+    return ListView.builder(
+      itemCount: students.length,
+      itemBuilder: (context, index) {
+        final student = students[index];
+        return ListTile(
+          title: Text('${student.name} ${student.surname ?? ''}'),
+          subtitle: Text('Цена: ${student.price} руб.'),
+          onTap: () => _editStudent(student),
+          trailing: isArchived
+              ? IconButton(
+                  icon: const Icon(Icons.more_vert),
+                  onPressed: () => _showArchiveMenu(context, student),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.archive),
+                  onPressed: () => _toggleArchiveStatus(student.id!, true),
+                ),
+        );
+      },
+    );
+  }
+
+  void _showArchiveMenu(BuildContext context, Student student) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: AlertDialog(
+            title: Text('${student.name} ${student.surname ?? ''}'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.unarchive),
+                  title: const Text('Перенести в активные'),
+                  onTap: () {
+                    _toggleArchiveStatus(student.id!, false);
+                    Navigator.of(context).pop();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.delete),
+                  title: const Text('Удалить'),
+                  onTap: () {
+                    _deleteStudent(student.id!);
+                    Navigator.of(context).pop();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.cancel),
+                  title: const Text('Отмена'),
+                  onTap: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

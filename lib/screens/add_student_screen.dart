@@ -19,7 +19,6 @@ class AddStudentScreen extends StatefulWidget {
 class _AddStudentScreenState extends State<AddStudentScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers for text fields
   final _nameController = TextEditingController();
   final _surnameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -27,18 +26,14 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   final _priceController = TextEditingController();
   final _notesController = TextEditingController();
 
-  // State for messengers and autoPay
   List<Map<String, String>> _messengers = [];
   bool _autoPay = false;
+  bool _isFormValid = false;
 
-  // State for lessons
   List<Map<String, dynamic>> _lessonDays = [];
   bool _duplicateLessons = false;
   DateTime? _startDate;
   DateTime? _endDate;
-
-  // State for form validity to enable/disable save button
-  bool _isFormValid = false;
 
   @override
   void initState() {
@@ -53,15 +48,18 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       _notesController.text = student.notes ?? '';
       _autoPay = student.autoPay;
       if (student.messengers != null && student.messengers!.isNotEmpty) {
-        _messengers = (jsonDecode(student.messengers!) as List)
-            .map((item) => Map<String, String>.from(item))
-            .toList();
+        try {
+          _messengers = (jsonDecode(student.messengers!) as List)
+              .map((item) => Map<String, String>.from(item))
+              .toList();
+        } catch (e) {
+          _messengers = [];
+        }
       }
     }
-    // Add listeners to check form validity
     _nameController.addListener(_validateForm);
     _priceController.addListener(_validateForm);
-    _validateForm(); // Initial validation
+    _validateForm();
   }
 
   @override
@@ -89,7 +87,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     }
   }
 
-  // Метод для сохранения нового ученика в базу данных
   Future<void> _saveStudent() async {
     if (_formKey.currentState!.validate()) {
       final studentToSave = Student(
@@ -99,7 +96,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
         phone: _phoneController.text,
         email: _emailController.text,
         messengers: jsonEncode(_messengers),
-        price: double.parse(_priceController.text),
+        price: double.tryParse(_priceController.text) ?? 0.0,
         autoPay: _autoPay,
         notes: _notesController.text,
       );
@@ -114,7 +111,10 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
         studentId = await database.insertStudent(studentToSave);
       }
 
-      if (_duplicateLessons && _startDate != null && _endDate != null && _lessonDays.isNotEmpty) {
+      if (_duplicateLessons &&
+          _startDate != null &&
+          _endDate != null &&
+          _lessonDays.isNotEmpty) {
         final lessonsToCreate = <Lesson>[];
         final Map<String, int> weekDayMap = {
           'Понедельник': DateTime.monday,
@@ -133,7 +133,8 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
 
           if (weekDay != null) {
             var currentDate = _startDate!;
-            while (currentDate.isBefore(_endDate!) || currentDate.isAtSameMomentAs(_endDate!)) {
+            while (currentDate.isBefore(_endDate!) ||
+                currentDate.isAtSameMomentAs(_endDate!)) {
               if (currentDate.weekday == weekDay) {
                 final lessonStartTime = DateTime(
                   currentDate.year,
@@ -250,14 +251,19 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           ),
         ],
       ),
-      backgroundColor: Colors.deepPurple,
+      
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(10.0),
           children: [
             _buildSectionTitle('Общая информация'),
             Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
               child: Column(
                 children: [
                   TextFormField(
@@ -287,6 +293,11 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
 
             _buildSectionTitle('Контакты'),
             Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
               child: Column(
                 children: [
                   TextFormField(
@@ -308,6 +319,28 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     ),
                     keyboardType: TextInputType.emailAddress,
                   ),
+                ],
+              ),
+            ),
+
+            _buildSectionTitle('Мессенджеры'),
+            Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: Column(
+                children: [
+                  ..._messengers.map((messenger) {
+                    return ListTile(
+                      title: Text('${messenger['type']}: ${messenger['value']}'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => setState(() => _messengers.remove(messenger)),
+                      ),
+                    );
+                  }),
                   const Divider(height: 1, color: Colors.grey),
                   ListTile(
                     leading: const Icon(Icons.add, color: Colors.deepPurple),
@@ -320,6 +353,11 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
 
             _buildSectionTitle('Финансы'),
             Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
               child: Column(
                 children: [
                   TextFormField(
@@ -342,6 +380,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     value: _autoPay,
                     onChanged: (bool? value) => setState(() => _autoPay = value ?? false),
                     controlAffinity: ListTileControlAffinity.leading,
+                    activeColor: Colors.deepPurple,
                   ),
                 ],
               ),
@@ -349,6 +388,11 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
 
             _buildSectionTitle('Примечания'),
             Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
               child: TextFormField(
                 controller: _notesController,
                 decoration: const InputDecoration(
@@ -359,9 +403,14 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                 maxLines: 3,
               ),
             ),
-
+            
             _buildSectionTitle('Занятия'),
             Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
               child: Column(
                 children: [
                   ..._lessonDays.map((lesson) {
@@ -390,20 +439,26 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                       });
                     },
                     controlAffinity: ListTileControlAffinity.leading,
+                    activeColor: Colors.deepPurple,
                   ),
+                  
                   if (_duplicateLessons) ...[
                     const Divider(height: 1),
                     ListTile(
                       leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
                       title: const Text('С'),
-                      trailing: Text(_startDate == null ? 'Выберите дату' : DateFormat('dd.MM.yyyy').format(_startDate!)),
+                      trailing: Text(_startDate == null
+                          ? 'Выберите дату'
+                          : DateFormat('dd.MM.yyyy').format(_startDate!)),
                       onTap: _selectStartDate,
                     ),
                     const Divider(height: 1),
                     ListTile(
                       leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
                       title: const Text('По'),
-                      trailing: Text(_endDate == null ? 'Выберите дату' : DateFormat('dd.MM.yyyy').format(_endDate!)),
+                      trailing: Text(_endDate == null
+                          ? 'Выберите дату'
+                          : DateFormat('dd.MM.yyyy').format(_endDate!)),
                       onTap: _selectEndDate,
                     ),
                   ],
@@ -476,7 +531,10 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                   DropdownButtonFormField<String>(
                     value: selectedDay,
                     hint: const Text('Выберите день недели'),
-                    items: ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
+                    items: [
+                      'Понедельник', 'Вторник', 'Среда', 'Четверг',
+                      'Пятница', 'Суббота', 'Воскресенье'
+                    ]
                         .map((day) => DropdownMenuItem(value: day, child: Text(day)))
                         .toList(),
                     onChanged: (value) {

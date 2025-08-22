@@ -61,9 +61,6 @@ class AppDatabase {
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      // await db.execute('DROP TABLE IF EXISTS students');
-      // await db.execute('DROP TABLE IF EXISTS lessons');
-      // await _onCreate(db, newVersion);
       await db.execute('''
       ALTER TABLE students ADD COLUMN surname TEXT
     ''');
@@ -100,7 +97,7 @@ class AppDatabase {
       final List<Map<String, dynamic>> oldLessons = await db.query('lessons_old');
       for (final oldLesson in oldLessons) {
         final startTime = oldLesson['date'];
-        final endTime = startTime != null ? startTime + 3600000 : null; // Add 1 hour
+        final endTime = startTime != null ? startTime + 3600000 : null;
         await db.insert('lessons', {
           'id': oldLesson['id'],
           'student_id': oldLesson['student_id'],
@@ -113,15 +110,11 @@ class AppDatabase {
     }
   }
 
-  // --- Методы для работы с учениками ---
-
-  // Создание (добавление) нового ученика
   Future<int> insertStudent(Student student) async {
     final db = await database;
     return await db.insert('students', student.toMap());
   }
 
-  // Чтение (получение) всех учеников
   Future<List<Student>> getStudents({bool isArchived = false}) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
@@ -135,7 +128,6 @@ class AppDatabase {
     });
   }
 
-  // Архивирование/разархивирование ученика
   Future<int> setStudentArchived(int id, bool isArchived) async {
     final db = await database;
     return await db.update(
@@ -146,7 +138,6 @@ class AppDatabase {
     );
   }
 
-  // Обновление данных ученика
   Future<int> updateStudent(Student student) async {
     final db = await database;
     return await db.update(
@@ -157,21 +148,16 @@ class AppDatabase {
     );
   }
 
-  // Удаление ученика
   Future<int> deleteStudent(int id) async {
     final db = await database;
     return await db.delete('students', where: 'id = ?', whereArgs: [id]);
   }
 
-  // --- Методы для работы с занятиями ---
-
-  // Создание (добавление) нового занятия
   Future<int> insertLesson(Lesson lesson) async {
     final db = await database;
     return await db.insert('lessons', lesson.toMap());
   }
 
-  // Метод для пакетной вставки нескольких занятий
   Future<void> insertLessons(List<Lesson> lessons) async {
     final db = await database;
     final batch = db.batch();
@@ -181,10 +167,8 @@ class AppDatabase {
     await batch.commit();
   }
 
-  // Получение занятий для определенной даты
   Future<List<Lesson>> getLessonsByDate(DateTime date) async {
     final db = await database;
-    // Преобразуем дату в миллисекунды для сравнения в базе данных
     final startOfDay = DateTime(
       date.year,
       date.month,
@@ -210,7 +194,6 @@ class AppDatabase {
     });
   }
 
-  // Получение всех занятий
   Future<List<Lesson>> getAllLessons() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('lessons');
@@ -219,7 +202,6 @@ class AppDatabase {
     });
   }
 
-  // Получение информации о занятии с данными ученика
   Future<Map<String, dynamic>> getLessonWithStudent(int lessonId) async {
     final db = await database;
     final List<Map<String, dynamic>> result = await db.rawQuery(
@@ -244,7 +226,6 @@ class AppDatabase {
     return {};
   }
 
-  // Метод для обновления занятия
   Future<void> updateLesson(Lesson lesson) async {
     final db = await database;
     await db.update(
@@ -255,15 +236,11 @@ class AppDatabase {
     );
   }
 
-  // Метод для удаления занятия по ID
   Future<void> deleteLesson(int id) async {
     final db = await database;
     await db.delete('lessons', where: 'id = ?', whereArgs: [id]);
   }
 
-  // --- Методы для работы с финансами ---
-
-  // Обновление статуса оплаты занятия
   Future<void> updateLessonIsPaid(int lessonId, bool isPaid) async {
     final db = await database;
     await db.update(
@@ -274,7 +251,6 @@ class AppDatabase {
     );
   }
 
-  // Получение всех занятий, включая данные учеников, для экрана "Финансы"
   Future<List<Map<String, dynamic>>> getFinancialData() async {
     final db = await database;
     return await db.rawQuery('''

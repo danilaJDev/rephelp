@@ -13,7 +13,6 @@ class Lesson {
     this.isPaid = false,
   });
 
-  // Метод для преобразования объекта Lesson в Map (для сохранения в базу данных)
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -24,7 +23,6 @@ class Lesson {
     };
   }
 
-  // Метод для создания объекта Lesson из Map (для чтения из базы данных)
   factory Lesson.fromMap(Map<String, dynamic> map) {
     return Lesson(
       id: map['id'] as int?,

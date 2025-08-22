@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:rephelp/models/lesson.dart';
 import 'package:rephelp/models/student.dart';
+import 'package:rephelp/widgets/custom_app_bar.dart';
 
 class AddLessonScreen extends StatefulWidget {
   final List<Student> students;
@@ -26,30 +28,34 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   void initState() {
     super.initState();
     if (widget.lessonToEdit != null) {
-      // Если передано занятие для редактирования, находим и выбираем ученика
-      _selectedStudent = widget.students.firstWhere(
-        (s) => s.id == widget.lessonToEdit!.studentId,
-      );
+      try {
+        _selectedStudent = widget.students.firstWhere(
+          (s) => s.id == widget.lessonToEdit!.studentId,
+        );
+      } catch (e) {
+        if (widget.students.isNotEmpty) {
+          _selectedStudent = widget.students.first;
+        }
+      }
     } else if (widget.students.isNotEmpty) {
-      // Иначе, если список не пуст, выбираем первого
       _selectedStudent = widget.students.first;
     }
   }
 
   Future<void> _saveLesson() async {
-    if (_selectedStudent != null) {
+    final student = _selectedStudent;
+    if (student != null && student.id != null) {
       final AppDatabase database = AppDatabase();
       final newLesson = Lesson(
-        id: widget.lessonToEdit?.id, // Передаем ID, если это редактирование
-        studentId: _selectedStudent!.id!,
-        date: widget.selectedDate,
-        isPaid: widget.lessonToEdit?.isPaid ?? false, // Сохраняем статус оплаты
+        id: widget.lessonToEdit?.id,
+        studentId: student.id!,
+        startTime: widget.selectedDate,
+        endTime: widget.selectedDate.add(const Duration(hours: 1)),
+        isPaid: widget.lessonToEdit?.isPaid ?? false,
       );
       if (newLesson.id != null) {
-        // Если ID существует, обновляем
         await database.updateLesson(newLesson);
       } else {
-        // Иначе создаем новое занятие
         await database.insertLesson(newLesson);
       }
       if (mounted) {
@@ -65,48 +71,67 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.lessonToEdit != null
-              ? 'Редактировать занятие'
-              : 'Добавить занятие',
+      appBar: CustomAppBar(
+        title: widget.lessonToEdit != null
+            ? 'Редактировать занятие'
+            : 'Добавить занятие',
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
-        backgroundColor: Colors.blueGrey,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.check, color: Colors.white),
+            onPressed: _saveLesson,
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Дата: ${widget.selectedDate.toLocal().toString().split(' ')[0]}',
-              style: const TextStyle(fontSize: 18),
+      body: ListView(
+        padding: const EdgeInsets.all(10.0),
+        children: [
+          Card(
+            color: Colors.white,
+            margin: const EdgeInsets.symmetric(vertical: 4.0),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15.0),
             ),
-            const SizedBox(height: 20),
-            const Text('Выберите ученика:', style: TextStyle(fontSize: 16)),
-            DropdownButton<Student>(
-              value: _selectedStudent,
-              onChanged: (Student? newValue) {
-                setState(() {
-                  _selectedStudent = newValue;
-                });
-              },
-              items: widget.students.map<DropdownMenuItem<Student>>((
-                Student student,
-              ) {
-                return DropdownMenuItem<Student>(
-                  value: student,
-                  child: Text(student.name),
-                );
-              }).toList(),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Дата: ${DateFormat.yMMMd('ru').format(widget.selectedDate)}',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('Ученик:', style: TextStyle(fontSize: 16)),
+                  const SizedBox(height: 8),
+                  if (widget.students.isNotEmpty)
+                    DropdownButtonFormField<Student>(
+                      value: _selectedStudent,
+                      onChanged: (Student? newValue) {
+                        setState(() {
+                          _selectedStudent = newValue;
+                        });
+                      },
+                      items: widget.students.map<DropdownMenuItem<Student>>((
+                        Student student,
+                      ) {
+                        return DropdownMenuItem<Student>(
+                          value: student,
+                          child: Text('${student.name} ${student.surname ?? ''}'),
+                        );
+                      }).toList(),
+                      isExpanded: true,
+                    )
+                  else
+                    const Text('Нет доступных учеников.'),
+                ],
+              ),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _saveLesson,
-              child: const Text('Сохранить занятие'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

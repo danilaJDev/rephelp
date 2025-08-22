@@ -247,6 +247,23 @@ class AppDatabase {
     await db.delete('lessons', where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<void> deleteFutureRecurringLessons(int studentId, DateTime startTime) async {
+    final db = await database;
+    final startTimeMillis = startTime.millisecondsSinceEpoch;
+    // Dart: Mon=1..Sun=7, SQLite's strftime('%w',...): Sun=0..Sat=6
+    final sqliteWeekday = (startTime.weekday % 7).toString();
+
+    await db.rawDelete(
+      '''
+      DELETE FROM lessons
+      WHERE student_id = ?
+      AND start_time >= ?
+      AND strftime('%w', start_time / 1000, 'unixepoch') = ?
+      ''',
+      [studentId, startTimeMillis, sqliteWeekday],
+    );
+  }
+
   Future<void> updateLessonIsPaid(int lessonId, bool isPaid) async {
     final db = await database;
     await db.update(

@@ -258,13 +258,60 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 },
               ),
               ListTile(
-                title: const Text('Отмена'),
+                title: const Text('Отменить занятие', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.of(context).pop(); // Close the menu dialog
+                  _showCancelOptionsDialog(lesson, student);
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                title: const Text('Закрыть'),
                 onTap: () {
                   Navigator.of(context).pop();
                 },
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _showCancelOptionsDialog(Lesson lesson, Student student) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Отменить занятие'),
+          content: const Text('Как вы хотите отменить занятие?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Только это'),
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close the options dialog
+                await _database.deleteLesson(lesson.id!);
+                await _loadAllData();
+              },
+            ),
+            TextButton(
+              child: const Text('Это и все последующие'),
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close the options dialog
+                await _database.deleteFutureRecurringLessons(
+                  student.id!,
+                  lesson.startTime,
+                );
+                await _loadAllData();
+              },
+            ),
+            TextButton(
+              child: const Text('Закрыть', style: TextStyle(color: Colors.grey)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
         );
       },
     );
@@ -332,33 +379,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                           await _loadAllData();
                         }
                       },
-                      onLongPress: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: const Text('Удалить занятие?'),
-                              content: const Text(
-                                'Вы уверены, что хотите удалить это занятие?',
-                              ),
-                              actions: <Widget>[
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Отмена'),
-                                ),
-                                TextButton(
-                                  onPressed: () async {
-                                    await _database.deleteLesson(lesson.id!);
-                                    await _loadAllData();
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('Удалить'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
+                      onLongPress: () => _showCancelOptionsDialog(lesson, student),
                     );
                   },
                 ),

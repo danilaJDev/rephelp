@@ -23,6 +23,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   List<Map<String, dynamic>> _lessons = [];
   List<Student> _students = [];
   Map<DateTime, List<Map<String, dynamic>>> _allLessons = {};
+  DateTime _focusedDateForTable = DateTime.now();
 
   @override
   void initState() {
@@ -103,6 +104,152 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       }
     }
     return data;
+  }
+
+  Widget _buildWeekNavigator() {
+    final startOfWeek = _getStartOfWeek(_focusedDateForTable);
+    final endOfWeek = startOfWeek.add(const Duration(days: 6));
+    final format = DateFormat('d MMM', 'ru_RU');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: () {
+              setState(() {
+                _focusedDateForTable =
+                    _focusedDateForTable.subtract(const Duration(days: 7));
+              });
+            },
+          ),
+          Text(
+            '${format.format(startOfWeek)} - ${format.format(endOfWeek)}',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: () {
+              setState(() {
+                _focusedDateForTable =
+                    _focusedDateForTable.add(const Duration(days: 7));
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  DateTime _getStartOfWeek(DateTime date) {
+    final weekday = date.weekday;
+    // Adjust for locales where Sunday is the first day of the week
+    final int daysToSubtract = weekday == DateTime.sunday ? 6 : weekday - 1;
+    return DateTime(date.year, date.month, date.day)
+        .subtract(Duration(days: daysToSubtract));
+  }
+
+  List<Map<String, dynamic>> _getLessonsForSlot(DateTime day,
+      TimeOfDay time, Map<DateTime, List<Map<String, dynamic>>> weekLessons) {
+    final dayKey = DateTime(day.year, day.month, day.day);
+    if (!weekLessons.containsKey(dayKey)) {
+      return [];
+    }
+    final lessonsForDay = weekLessons[dayKey]!;
+    return lessonsForDay.where((lessonData) {
+      final lesson = lessonData['lesson'] as Lesson;
+      final lessonTime = TimeOfDay.fromDateTime(lesson.startTime);
+      // Check if lesson starts within this hour slot
+      return lessonTime.hour == time.hour;
+    }).toList();
+  }
+
+  TableRow _buildHeaderRow(List<DateTime> daysOfWeek) {
+    final format = DateFormat('E, d', 'ru_RU');
+    return TableRow(
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+      ),
+      children: [
+        const Center(
+            child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text('Время',
+                    style: TextStyle(fontWeight: FontWeight.bold)))),
+        ...daysOfWeek.map((day) => Center(
+            child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(format.format(day),
+                    style: const TextStyle(fontWeight: FontWeight.bold))))),
+      ],
+    );
+  }
+
+  TableRow _buildTimeSlotRow(
+      TimeOfDay time,
+      List<DateTime> daysOfWeek,
+      Map<DateTime, List<Map<String, dynamic>>> weekLessons) {
+    return TableRow(
+      children: [
+        Center(
+            child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                    '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}'))),
+        ...daysOfWeek.map((day) {
+          final lessonsInSlot = _getLessonsForSlot(day, time, weekLessons);
+          if (lessonsInSlot.isEmpty) {
+            return DragTarget<Lesson>(
+              builder: (context, candidateData, rejectedData) {
+                return Container(height: 60); // Empty cell
+              },
+              onWillAccept: (data) => true,
+              onAccept: (data) {
+                // Handle lesson drop here
+                // You might want to update lesson time
+              },
+            );
+          }
+          return Container(
+            padding: const EdgeInsets.all(2.0),
+            child: Column(
+              children: lessonsInSlot.map((lessonData) {
+                final lesson = lessonData['lesson'] as Lesson;
+                final student = lessonData['student'] as Student;
+                final lessonWidget = Card(
+                  elevation: 2,
+                  color: Colors.deepPurple[100],
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Text(
+                      '${student.name} ${student.surname ?? ''}',
+                      style: const TextStyle(fontSize: 12),
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                );
+
+                return Draggable<Lesson>(
+                  data: lesson,
+                  feedback: Opacity(
+                    opacity: 0.7,
+                    child: lessonWidget,
+                  ),
+                  childWhenDragging: Opacity(
+                    opacity: 0.3,
+                    child: lessonWidget,
+                  ),
+                  child: lessonWidget,
+                );
+              }).toList(),
+            ),
+          );
+        }),
+      ],
+    );
   }
 
   @override
@@ -324,7 +471,49 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   Widget _buildTableView() {
-    return const Center(child: Text('Таблица (в разработке)'));
+    final startOfWeek = _getStartOfWeek(_focusedDateForTable);
+    final daysOfWeek =
+        List.generate(7, (index) => startOfWeek.add(Duration(days: index)));
+    final timeSlots = List.generate(
+        15, (index) => TimeOfDay(hour: 8 + index, minute: 0)); // 8 AM to 10 PM
+
+    // Filter lessons for the current week
+    final weekLessons = <DateTime, List<Map<String, dynamic>>>{};
+    _allLessons.forEach((day, lessons) {
+      final dayOnly = DateTime(day.year, day.month, day.day);
+      if (!dayOnly.isBefore(startOfWeek) &&
+          dayOnly.isBefore(startOfWeek.add(const Duration(days: 7)))) {
+        weekLessons[dayOnly] = lessons;
+      }
+    });
+
+    return Column(
+      children: [
+        _buildWeekNavigator(),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Table(
+              border: TableBorder.all(color: Colors.grey.shade300),
+              columnWidths: const {
+                0: IntrinsicColumnWidth(), // Time column
+                1: FlexColumnWidth(),
+                2: FlexColumnWidth(),
+                3: FlexColumnWidth(),
+                4: FlexColumnWidth(),
+                5: FlexColumnWidth(),
+                6: FlexColumnWidth(),
+                7: FlexColumnWidth(),
+              },
+              children: [
+                _buildHeaderRow(daysOfWeek),
+                ...timeSlots.map((time) =>
+                    _buildTimeSlotRow(time, daysOfWeek, weekLessons)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildCalendarView() {

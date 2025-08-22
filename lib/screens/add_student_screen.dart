@@ -28,7 +28,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
 
   List<Map<String, String>> _messengers = [];
   bool _autoPay = false;
-
   bool _isFormValid = false;
 
   List<Map<String, dynamic>> _lessonDays = [];
@@ -252,6 +251,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           ),
         ],
       ),
+      
       body: Form(
         key: _formKey,
         child: ListView(
@@ -278,7 +278,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                       return null;
                     },
                   ),
-                  const Divider(height: 1),
+                  const Divider(height: 1, color: Colors.grey),
                   TextFormField(
                     controller: _surnameController,
                     decoration: const InputDecoration(
@@ -309,7 +309,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     ),
                     keyboardType: TextInputType.phone,
                   ),
-                  const Divider(height: 1),
+                  const Divider(height: 1, color: Colors.grey),
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
@@ -341,7 +341,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                       ),
                     );
                   }),
-                  const Divider(height: 1),
+                  const Divider(height: 1, color: Colors.grey),
                   ListTile(
                     leading: const Icon(Icons.add, color: Colors.deepPurple),
                     title: const Text('Добавить мессенджер', style: TextStyle(color: Colors.deepPurple)),
@@ -374,7 +374,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                       return null;
                     },
                   ),
-                  const Divider(height: 1),
+                  const Divider(height: 1, color: Colors.grey),
                   CheckboxListTile(
                     title: const Text('После проведения занятия считать его автоматически оплаченным'),
                     value: _autoPay,
@@ -403,6 +403,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                 maxLines: 3,
               ),
             ),
+            
             _buildSectionTitle('Занятия'),
             Card(
               color: Colors.white,
@@ -440,6 +441,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     controlAffinity: ListTileControlAffinity.leading,
                     activeColor: Colors.deepPurple,
                   ),
+                  
                   if (_duplicateLessons) ...[
                     const Divider(height: 1),
                     ListTile(
@@ -475,9 +477,9 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       child: Text(
         title.toUpperCase(),
         style: const TextStyle(
-          color: AppColors.mutedText,
+          color: Colors.white,
           fontWeight: FontWeight.bold,
-          fontSize: 14,
+          fontSize: 14
         ),
       ),
     );

@@ -97,7 +97,6 @@ class AppDatabase {
       final List<Map<String, dynamic>> oldLessons = await db.query('lessons_old');
       for (final oldLesson in oldLessons) {
         final startTime = oldLesson['date'];
-        // Assume a 1-hour duration for old lessons for data integrity.
         final endTime = startTime != null ? startTime + 3600000 : null;
         await db.insert('lessons', {
           'id': oldLesson['id'],

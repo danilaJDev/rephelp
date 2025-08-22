@@ -68,12 +68,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   ),
                   _buildStatCard(
                     'Общий доход',
-                    '${_totalEarned.toStringAsFixed(0)} ₽',
+                    '${_totalEarned.toStringAsFixed(0)} руб.',
                     Icons.monetization_on_outlined,
                   ),
                   _buildStatCard(
                     'Средняя цена занятия',
-                    '${_averagePrice.toStringAsFixed(0)} ₽',
+                    '${_averagePrice.toStringAsFixed(0)} руб.',
                     Icons.price_check_outlined,
                   ),
                 ],

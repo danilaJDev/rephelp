@@ -83,13 +83,13 @@ class _FinanceScreenState extends State<FinanceScreen> {
           children: [
             _buildSummaryItem(
               'Всего заработано',
-              '${_totalEarned.toStringAsFixed(0)} ₽',
+              '${_totalEarned.toStringAsFixed(0)} руб.',
               Colors.green,
               Icons.account_balance_wallet,
             ),
             _buildSummaryItem(
               'Ожидается оплата',
-              '${_unpaidAmount.toStringAsFixed(0)} ₽',
+              '${_unpaidAmount.toStringAsFixed(0)} руб.',
               Colors.orange,
               Icons.hourglass_bottom,
             ),
@@ -157,7 +157,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
             ),
             subtitle: Text(DateFormat.yMMMd('ru').format(date)),
             trailing: Text(
-              '${(lesson['price'] as num).toStringAsFixed(0)} ₽',
+              '${(lesson['price'] as num).toStringAsFixed(0)} руб.',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),

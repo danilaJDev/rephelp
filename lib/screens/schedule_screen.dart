@@ -266,18 +266,21 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
+                leading: const Icon(Icons.person_off, color: Colors.orange),
                 title: const Text('Ученик отсутствовал'),
                 onTap: () {
                   Navigator.of(context).pop();
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.payment, color: Colors.green),
                 title: const Text('Занятие оплачено'),
                 onTap: () {
                   Navigator.of(context).pop();
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.edit, color: Colors.blue),
                 title: const Text('Редактировать'),
                 onTap: () async {
                   Navigator.of(context).pop();
@@ -297,6 +300,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
                 title: const Text(
                   'Отменить занятие',
                   style: TextStyle(color: Colors.red),
@@ -308,6 +312,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               ),
               const Divider(height: 1),
               ListTile(
+                leading: const Icon(Icons.close),
                 title: const Text('Закрыть'),
                 onTap: () {
                   Navigator.of(context).pop();

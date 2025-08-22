@@ -219,15 +219,66 @@ class _StudentsScreenState extends State<StudentsScreen>
               ),
             ),
             onTap: () => _editStudent(student),
-            trailing: isArchived
-                ? IconButton(
-                    icon: const Icon(Icons.more_vert),
-                    onPressed: () => _showArchiveMenu(context, student),
-                  )
-                : IconButton(
-                    icon: const Icon(Icons.archive, color: Colors.deepPurple),
-                    onPressed: () => _toggleArchiveStatus(student.id!, true),
-                  ),
+            trailing: IconButton(
+              icon: const Icon(Icons.more_vert, color: Colors.deepPurple),
+              onPressed: () {
+                if (isArchived) {
+                  _showArchiveMenu(context, student);
+                } else {
+                  _showActiveMenu(context, student);
+                }
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showActiveMenu(BuildContext context, Student student) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Center(
+            child: Column(
+              children: [
+                const Icon(Icons.person, size: 30),
+                const SizedBox(height: 10),
+                Text('${student.name} ${student.surname ?? ''}'),
+              ],
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Редактировать'),
+                iconColor: Colors.blue,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _editStudent(student);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.archive),
+                iconColor: Colors.orange,
+                title: const Text('Архивировать'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _toggleArchiveStatus(student.id!, true);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.cancel),
+                title: const Text('Отмена'),
+                onTap: () => Navigator.of(context).pop(),
+              ),
+            ],
           ),
         );
       },

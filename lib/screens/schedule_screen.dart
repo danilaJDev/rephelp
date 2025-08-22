@@ -22,7 +22,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   final AppDatabase _database = AppDatabase();
   List<Map<String, dynamic>> _lessons = [];
   List<Student> _students = [];
-  Map<DateTime, List<Lesson>> _allLessons = {};
+  Map<DateTime, List<Map<String, dynamic>>> _allLessons = {};
 
   @override
   void initState() {
@@ -45,7 +45,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     await _loadLessonsForDay(_selectedDay!);
     setState(() {
       _students = allStudents;
-      _allLessons = _groupLessonsByDate(allLessons);
+      _allLessons = _groupAndPairLessons(allLessons, allStudents);
     });
   }
 
@@ -53,8 +53,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     final lessons = await _database.getLessonsByDate(day);
     final List<Map<String, dynamic>> lessonsWithStudents = [];
     for (var lesson in lessons) {
-      final student = _students.firstWhere((s) => s.id == lesson.studentId);
-      lessonsWithStudents.add({'lesson': lesson, 'student': student});
+      try {
+        final student = _students.firstWhere((s) => s.id == lesson.studentId);
+        lessonsWithStudents.add({'lesson': lesson, 'student': student});
+      } catch (e) {
+        // Student not found for this lesson, maybe log this error
+        print('Error: Student with id ${lesson.studentId} not found for lesson ${lesson.id}');
+      }
     }
     if (!mounted) return;
     setState(() {
@@ -72,18 +77,25 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     }
   }
 
-  Map<DateTime, List<Lesson>> _groupLessonsByDate(List<Lesson> lessons) {
-    final Map<DateTime, List<Lesson>> data = {};
+  Map<DateTime, List<Map<String, dynamic>>> _groupAndPairLessons(
+      List<Lesson> lessons, List<Student> students) {
+    final Map<DateTime, List<Map<String, dynamic>>> data = {};
     for (var lesson in lessons) {
-      final day = DateTime(
-        lesson.date.year,
-        lesson.date.month,
-        lesson.date.day,
-      );
-      if (data.containsKey(day)) {
-        data[day]!.add(lesson);
-      } else {
-        data[day] = [lesson];
+      try {
+        final student = students.firstWhere((s) => s.id == lesson.studentId);
+        final day = DateTime(
+          lesson.startTime.year,
+          lesson.startTime.month,
+          lesson.startTime.day,
+        );
+        final lessonWithStudent = {'lesson': lesson, 'student': student};
+        if (data.containsKey(day)) {
+          data[day]!.add(lessonWithStudent);
+        } else {
+          data[day] = [lessonWithStudent];
+        }
+      } catch (e) {
+        print('Student not found for lesson ${lesson.id}');
       }
     }
     return data;
@@ -177,10 +189,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 ),
               ),
             ),
-            ...lessons.map((lesson) {
-              final student = _students.firstWhere(
-                (s) => s.id == lesson.studentId,
-              );
+            ...lessons.map((lessonData) {
+              final lesson = lessonData['lesson'] as Lesson;
+              final student = lessonData['student'] as Student;
               return _buildLessonCard(lesson, student);
             }).toList(),
           ],
@@ -190,11 +201,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   Widget _buildLessonCard(Lesson lesson, Student student) {
-    final startTime = DateFormat('HH:mm').format(lesson.date);
-    final endTime = DateFormat(
-      'HH:mm',
-    ).format(lesson.date.add(const Duration(hours: 1)));
-    final studentName = '${student.name} ${student.surname?[0] ?? ''}.';
+    final startTime = DateFormat('HH:mm').format(lesson.startTime);
+    final endTime = DateFormat('HH:mm').format(lesson.endTime);
+    final studentName = '${student.name} ${student.surname ?? ''}';
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -310,7 +319,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                           MaterialPageRoute(
                             builder: (context) => AddLessonScreen(
                               students: _students,
-                              selectedDate: _selectedDay!,
+                              selectedDate: lesson.startTime,
                               lessonToEdit: lesson,
                             ),
                           ),

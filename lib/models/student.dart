@@ -6,7 +6,7 @@ class Student {
   final String? surname;
   final String? phone;
   final String? email;
-  final String? messengers; // JSON string for list of messengers
+  final String? messengers;
   final double price;
   final bool autoPay;
   final String? notes;
@@ -34,7 +34,7 @@ class Student {
       'email': email,
       'messengers': messengers,
       'price': price,
-      'autoPay': autoPay ? 1 : 0, // Store bool as int
+      'autoPay': autoPay ? 1 : 0,
       'notes': notes,
       'is_archived': isArchived ? 1 : 0,
     };
@@ -49,7 +49,7 @@ class Student {
       email: map['email'] as String?,
       messengers: map['messengers'] as String?,
       price: map['price'] as double,
-      autoPay: map['autoPay'] == 1, // Read int as bool
+      autoPay: map['autoPay'] == 1,
       notes: map['notes'] as String?,
       isArchived: map['is_archived'] == 1,
     );

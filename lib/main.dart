@@ -7,7 +7,6 @@ import 'package:rephelp/screens/students_screen.dart';
 import 'package:rephelp/screens/schedule_screen.dart';
 import 'package:rephelp/screens/finance_screen.dart';
 import 'package:rephelp/screens/analytics_screen.dart';
-import 'package:rephelp/screens/add_student_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +24,7 @@ class RepHelpApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Помощник репетитора',
       theme: ThemeData(
-        primarySwatch: Colors.blue, // Will be overridden by lavender
+        primarySwatch: Colors.blue,
         scaffoldBackgroundColor: const Color(0xFFf0f0f0),
         colorScheme: ColorScheme.fromSwatch().copyWith(
           primary: AppColors.lavender,

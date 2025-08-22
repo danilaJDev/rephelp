@@ -35,7 +35,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
     double totalRevenue = 0.0;
     for (var lesson in financialData) {
-      totalRevenue += lesson['price'] as double;
+      try {
+        totalRevenue += lesson['price'] as double;
+      } catch (e) {
+        print('Error processing financial data for analytics: $e');
+      }
     }
 
     setState(() {
@@ -53,66 +57,84 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       appBar: const CustomAppBar(title: 'Аналитика'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  _buildStatCard(
-                    'Всего занятий',
-                    _totalLessons.toString(),
-                    Icons.school,
+          : Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: const BoxDecoration(
+                    color: Colors.deepPurple,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    ),
                   ),
-                  _buildStatCard(
-                    'Всего учеников',
-                    _totalStudents.toString(),
-                    Icons.people,
+                  child: const Text(
+                    'Общая статистика',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  _buildStatCard(
-                    'Общий доход',
-                    '${_totalEarned.toStringAsFixed(0)} ₽',
-                    Icons.monetization_on,
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(10.0),
+                    children: [
+                      _buildStatCard(
+                        'Всего занятий',
+                        _totalLessons.toString(),
+                        Icons.school_outlined,
+                      ),
+                      _buildStatCard(
+                        'Всего учеников',
+                        _totalStudents.toString(),
+                        Icons.people_outline,
+                      ),
+                      _buildStatCard(
+                        'Общий доход',
+                        '${_totalEarned.toStringAsFixed(0)} ₽',
+                        Icons.monetization_on_outlined,
+                      ),
+                      _buildStatCard(
+                        'Средняя цена',
+                        '${_averagePrice.toStringAsFixed(0)} ₽',
+                        Icons.price_check_outlined,
+                      ),
+                    ],
                   ),
-                  _buildStatCard(
-                    'Средняя цена',
-                    '${_averagePrice.toStringAsFixed(0)} ₽',
-                    Icons.attach_money,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
     );
   }
 
   Widget _buildStatCard(String title, String value, IconData icon) {
     return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Icon(icon, size: 40, color: AppColors.lavender),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ],
+      color: Colors.white,
+      margin: const EdgeInsets.symmetric(vertical: 4.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15.0),
+      ),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.deepPurple.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 24, color: Colors.deepPurple),
+        ),
+        title: Text(title, style: const TextStyle(color: AppColors.primaryText)),
+        trailing: Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primaryText,
+          ),
         ),
       ),
     );

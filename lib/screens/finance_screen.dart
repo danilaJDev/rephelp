@@ -33,11 +33,15 @@ class _FinanceScreenState extends State<FinanceScreen> {
     double unpaid = 0.0;
 
     for (var lesson in data) {
-      final price = lesson['price'] as double;
-      final isPaid = lesson['is_paid'] == 1;
-      total += price;
-      if (!isPaid) {
-        unpaid += price;
+      try {
+        final price = lesson['price'] as double;
+        final isPaid = lesson['is_paid'] == 1;
+        total += price;
+        if (!isPaid) {
+          unpaid += price;
+        }
+      } catch (e) {
+        print('Error processing financial data for lesson: $e');
       }
     }
 
@@ -62,88 +66,107 @@ class _FinanceScreenState extends State<FinanceScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Блок с общей финансовой статистикой
-                Card(
-                  margin: const EdgeInsets.all(8),
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Column(
-                          children: [
-                            const Text(
-                              'Общий доход',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                            Text(
-                              '${_totalEarned.toStringAsFixed(0)} ₽',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          children: [
-                            const Text(
-                              'Неоплачено',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                            Text(
-                              '${_unpaidAmount.toStringAsFixed(0)} ₽',
-                              style: const TextStyle(
-                                color: Colors.orange,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: const BoxDecoration(
+                    color: Colors.deepPurple,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
                     ),
                   ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Column(
+                        children: [
+                          const Text(
+                            'Общий доход',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          Text(
+                            '${_totalEarned.toStringAsFixed(0)} ₽',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          const Text(
+                            'Неоплачено',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          Text(
+                            '${_unpaidAmount.toStringAsFixed(0)} ₽',
+                            style: const TextStyle(
+                              color: Colors.amberAccent,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                // Список занятий
                 Expanded(
                   child: _financialData.isEmpty
                       ? const Center(child: Text('Нет данных о занятиях.'))
                       : ListView.builder(
+                          padding: const EdgeInsets.only(top: 10.0),
                           itemCount: _financialData.length,
                           itemBuilder: (context, index) {
-                            final lesson = _financialData[index];
-                            final lessonId = lesson['id'] as int;
-                            final isPaid = lesson['is_paid'] == 1;
-                            final date = DateTime.fromMillisecondsSinceEpoch(
-                              lesson['date'] as int,
-                            );
+                            try {
+                              final lesson = _financialData[index];
+                              final lessonId = lesson['id'] as int;
+                              final isPaid = lesson['is_paid'] == 1;
+                              final date = DateTime.fromMillisecondsSinceEpoch(
+                              lesson['start_time'] as int,
+                              );
 
-                            return Card(
+                              return Card(
+                                color: Colors.white,
+                              margin: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15.0),
+                              ),
                               child: ListTile(
-                                leading: Checkbox(
-                                  value: isPaid,
-                                  onChanged: (value) {
-                                    _togglePaidStatus(lessonId, isPaid);
-                                  },
+                                onTap: () => _togglePaidStatus(lessonId, isPaid),
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: isPaid ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    isPaid ? Icons.check : Icons.close,
+                                    color: isPaid ? Colors.green : Colors.red,
+                                  ),
                                 ),
-                                title: Text(lesson['name'] as String),
+                                title: Text(
+                                  lesson['name'] as String,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
                                 subtitle: Text(
-                                  '${DateFormat.yMMMd('ru').format(date)} | '
-                                  '${(lesson['price'] as double).toStringAsFixed(0)} ₽',
+                                  DateFormat.yMMMd('ru').format(date),
                                 ),
-                                trailing: isPaid
-                                    ? const Icon(
-                                        Icons.check,
-                                        color: Colors.green,
-                                      )
-                                    : const Icon(
-                                        Icons.close,
-                                        color: Colors.red,
-                                      ),
+                                trailing: Text(
+                                  '${(lesson['price'] as double).toStringAsFixed(0)} ₽',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
                               ),
                             );
+                            } catch (e) {
+                              print('Error building lesson card: $e');
+                              return const SizedBox.shrink(); // Or some error widget
+                            }
                           },
                         ),
                 ),

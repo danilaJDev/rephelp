@@ -604,30 +604,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   itemBuilder: (context, index) {
                     final lesson = _lessons[index]['lesson'] as Lesson;
                     final student = _lessons[index]['student'] as Student;
-                    return ListTile(
-                      title: Text('Занятие с ${student.name}'),
-                      subtitle: Text('Цена: ${student.price} руб.'),
-                      trailing: lesson.isPaid
-                          ? const Icon(Icons.check_circle, color: Colors.green)
-                          : const Icon(Icons.warning, color: Colors.orange),
-                      onTap: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AddLessonScreen(
-                              students: _students,
-                              selectedDate: lesson.startTime,
-                              lessonToEdit: lesson,
-                            ),
-                          ),
-                        );
-                        if (result == true) {
-                          await _loadAllData();
-                        }
-                      },
-                      onLongPress: () =>
-                          _showCancelOptionsDialog(lesson, student),
-                    );
+                    return _buildLessonCard(lesson, student);
                   },
                 ),
         ),

@@ -28,7 +28,7 @@ class AppDatabase {
     String path = join(databasesPath, 'rephelp_database.db');
 
     return await openDatabase(path,
-        version: 3, onCreate: _onCreate, onUpgrade: _onUpgrade);
+        version: 4, onCreate: _onCreate, onUpgrade: _onUpgrade);
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -51,7 +51,8 @@ class AppDatabase {
       CREATE TABLE lessons(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id INTEGER,
-        date INTEGER,
+        start_time INTEGER,
+        end_time INTEGER,
         is_paid INTEGER,
         FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
       )
@@ -83,6 +84,32 @@ class AppDatabase {
       await db.execute('''
       ALTER TABLE students ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0
     ''');
+    }
+    if (oldVersion < 4) {
+      await db.execute('ALTER TABLE lessons RENAME TO lessons_old');
+      await db.execute('''
+        CREATE TABLE lessons(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          student_id INTEGER,
+          start_time INTEGER,
+          end_time INTEGER,
+          is_paid INTEGER,
+          FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+        )
+      ''');
+      final List<Map<String, dynamic>> oldLessons = await db.query('lessons_old');
+      for (final oldLesson in oldLessons) {
+        final startTime = oldLesson['date'];
+        final endTime = startTime != null ? startTime + 3600000 : null; // Add 1 hour
+        await db.insert('lessons', {
+          'id': oldLesson['id'],
+          'student_id': oldLesson['student_id'],
+          'start_time': startTime,
+          'end_time': endTime,
+          'is_paid': oldLesson['is_paid'],
+        });
+      }
+      await db.execute('DROP TABLE lessons_old');
     }
   }
 
@@ -174,7 +201,7 @@ class AppDatabase {
 
     final List<Map<String, dynamic>> maps = await db.query(
       'lessons',
-      where: 'date BETWEEN ? AND ?',
+      where: 'start_time BETWEEN ? AND ?',
       whereArgs: [startOfDay, endOfDay],
     );
 
@@ -199,7 +226,8 @@ class AppDatabase {
       '''
     SELECT
       lessons.id,
-      lessons.date,
+      lessons.start_time,
+      lessons.end_time,
       lessons.is_paid,
       students.name,
       students.price
@@ -252,13 +280,14 @@ class AppDatabase {
     return await db.rawQuery('''
     SELECT
       lessons.id,
-      lessons.date,
+      lessons.start_time,
+      lessons.end_time,
       lessons.is_paid,
       students.name,
       students.price
     FROM lessons
     INNER JOIN students ON lessons.student_id = students.id
-    ORDER BY lessons.date DESC;
+    ORDER BY lessons.start_time DESC;
   ''');
   }
 }

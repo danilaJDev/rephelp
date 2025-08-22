@@ -31,6 +31,12 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   List<Map<String, String>> _messengers = [];
   bool _autoPay = false;
 
+  // State for lessons
+  List<Map<String, dynamic>> _lessonDays = [];
+  bool _duplicateLessons = false;
+  DateTime? _startDate;
+  DateTime? _endDate;
+
   // State for form validity to enable/disable save button
   bool _isFormValid = false;
 
@@ -86,7 +92,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   // Метод для сохранения нового ученика в базу данных
   Future<void> _saveStudent() async {
     if (_formKey.currentState!.validate()) {
-      final newStudent = Student(
+      final studentToSave = Student(
         id: widget.student?.id,
         name: _nameController.text,
         surname: _surnameController.text,
@@ -99,10 +105,63 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       );
 
       final database = AppDatabase();
-      if (newStudent.id != null) {
-        await database.updateStudent(newStudent);
+      int studentId;
+
+      if (studentToSave.id != null) {
+        await database.updateStudent(studentToSave);
+        studentId = studentToSave.id!;
       } else {
-        await database.insertStudent(newStudent);
+        studentId = await database.insertStudent(studentToSave);
+      }
+
+      if (_duplicateLessons && _startDate != null && _endDate != null && _lessonDays.isNotEmpty) {
+        final lessonsToCreate = <Lesson>[];
+        final Map<String, int> weekDayMap = {
+          'Понедельник': DateTime.monday,
+          'Вторник': DateTime.tuesday,
+          'Среда': DateTime.wednesday,
+          'Четверг': DateTime.thursday,
+          'Пятница': DateTime.friday,
+          'Суббота': DateTime.saturday,
+          'Воскресенье': DateTime.sunday,
+        };
+
+        for (var lessonDay in _lessonDays) {
+          final weekDay = weekDayMap[lessonDay['day']];
+          final startTime = lessonDay['startTime'] as TimeOfDay;
+          final endTime = lessonDay['endTime'] as TimeOfDay;
+
+          if (weekDay != null) {
+            var currentDate = _startDate!;
+            while (currentDate.isBefore(_endDate!) || currentDate.isAtSameMomentAs(_endDate!)) {
+              if (currentDate.weekday == weekDay) {
+                final lessonStartTime = DateTime(
+                  currentDate.year,
+                  currentDate.month,
+                  currentDate.day,
+                  startTime.hour,
+                  startTime.minute,
+                );
+                final lessonEndTime = DateTime(
+                  currentDate.year,
+                  currentDate.month,
+                  currentDate.day,
+                  endTime.hour,
+                  endTime.minute,
+                );
+                lessonsToCreate.add(Lesson(
+                  studentId: studentId,
+                  startTime: lessonStartTime,
+                  endTime: lessonEndTime,
+                ));
+              }
+              currentDate = currentDate.add(const Duration(days: 1));
+            }
+          }
+        }
+        if (lessonsToCreate.isNotEmpty) {
+          await database.insertLessons(lessonsToCreate);
+        }
       }
 
       if (mounted) {
@@ -317,6 +376,57 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                 maxLines: 3,
               ),
             ),
+
+            _buildSectionTitle('Занятия'),
+            Card(
+              child: Column(
+                children: [
+                  ..._lessonDays.map((lesson) {
+                    final startTime = (lesson['startTime'] as TimeOfDay).format(context);
+                    final endTime = (lesson['endTime'] as TimeOfDay).format(context);
+                    return ListTile(
+                      title: Text('${lesson['day']} - $startTime-$endTime'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => setState(() => _lessonDays.remove(lesson)),
+                      ),
+                    );
+                  }),
+                  ListTile(
+                    leading: const Icon(Icons.add, color: Colors.deepPurple),
+                    title: const Text('Добавить день занятия', style: TextStyle(color: Colors.deepPurple)),
+                    onTap: _showAddLessonDayDialog,
+                  ),
+                  const Divider(height: 1),
+                  CheckboxListTile(
+                    title: const Text('Дублировать занятия'),
+                    value: _duplicateLessons,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        _duplicateLessons = value ?? false;
+                      });
+                    },
+                    controlAffinity: ListTileControlAffinity.leading,
+                  ),
+                  if (_duplicateLessons) ...[
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
+                      title: const Text('С'),
+                      trailing: Text(_startDate == null ? 'Выберите дату' : DateFormat('dd.MM.yyyy').format(_startDate!)),
+                      onTap: _selectStartDate,
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
+                      title: const Text('По'),
+                      trailing: Text(_endDate == null ? 'Выберите дату' : DateFormat('dd.MM.yyyy').format(_endDate!)),
+                      onTap: _selectEndDate,
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -334,6 +444,122 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           fontSize: 14,
         ),
       ),
+    );
+  }
+
+  Future<void> _selectStartDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _startDate) {
+      setState(() {
+        _startDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectEndDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate ?? _startDate ?? DateTime.now(),
+      firstDate: _startDate ?? DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _endDate) {
+      setState(() {
+        _endDate = picked;
+      });
+    }
+  }
+
+  void _showAddLessonDayDialog() {
+    String? selectedDay;
+    TimeOfDay? startTime;
+    TimeOfDay? endTime;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Добавить день и время'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    value: selectedDay,
+                    hint: const Text('Выберите день недели'),
+                    items: ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
+                        .map((day) => DropdownMenuItem(value: day, child: Text(day)))
+                        .toList(),
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selectedDay = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    title: Text(startTime == null ? 'Начало' : startTime.format(context)),
+                    trailing: const Icon(Icons.access_time),
+                    onTap: () async {
+                      final time = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.now(),
+                      );
+                      if (time != null) {
+                        setDialogState(() {
+                          startTime = time;
+                        });
+                      }
+                    },
+                  ),
+                  ListTile(
+                    title: Text(endTime == null ? 'Конец' : endTime.format(context)),
+                    trailing: const Icon(Icons.access_time),
+                    onTap: () async {
+                      final time = await showTimePicker(
+                        context: context,
+                        initialTime: startTime ?? TimeOfDay.now(),
+                      );
+                      if (time != null) {
+                        setDialogState(() {
+                          endTime = time;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Отмена'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (selectedDay != null && startTime != null && endTime != null) {
+                      setState(() {
+                        _lessonDays.add({
+                          'day': selectedDay,
+                          'startTime': startTime,
+                          'endTime': endTime,
+                        });
+                      });
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('Добавить'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

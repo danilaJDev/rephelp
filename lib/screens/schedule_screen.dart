@@ -327,26 +327,34 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   TableRow _buildHeaderRow(List<DateTime> daysOfWeek) {
     final format = DateFormat('E, d', 'ru_RU');
     return TableRow(
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-      ),
+      decoration: BoxDecoration(color: Colors.grey[200]),
       children: [
         const Center(
+          child: Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text('Время', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ),
+        ...daysOfWeek.map(
+          (day) => Center(
             child: Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text('Время',
-                    style: TextStyle(fontWeight: FontWeight.bold)))),
-        ...daysOfWeek.map((day) => Center(
-            child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(format.format(day),
-                    style: const TextStyle(fontWeight: FontWeight.bold))))),
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                format.format(day),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  List<Map<String, dynamic>> _getLessonsForSlot(DateTime day,
-      TimeOfDay time, Map<DateTime, List<Map<String, dynamic>>> weekLessons) {
+  List<Map<String, dynamic>> _getLessonsForSlot(
+    DateTime day,
+    TimeOfDay time,
+    Map<DateTime, List<Map<String, dynamic>>> weekLessons,
+  ) {
     final dayKey = DateTime(day.year, day.month, day.day);
     if (!weekLessons.containsKey(dayKey)) {
       return [];
@@ -361,16 +369,20 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   TableRow _buildTimeSlotRow(
-      TimeOfDay time,
-      List<DateTime> daysOfWeek,
-      Map<DateTime, List<Map<String, dynamic>>> weekLessons) {
+    TimeOfDay time,
+    List<DateTime> daysOfWeek,
+    Map<DateTime, List<Map<String, dynamic>>> weekLessons,
+  ) {
     return TableRow(
       children: [
         Center(
-            child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                    '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}'))),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+            ),
+          ),
+        ),
         ...daysOfWeek.map((day) {
           final lessonsInSlot = _getLessonsForSlot(day, time, weekLessons);
           if (lessonsInSlot.isEmpty) {
@@ -406,14 +418,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
                 return Draggable<Lesson>(
                   data: lesson,
-                  feedback: Opacity(
-                    opacity: 0.7,
-                    child: lessonWidget,
-                  ),
-                  childWhenDragging: Opacity(
-                    opacity: 0.3,
-                    child: lessonWidget,
-                  ),
+                  feedback: Opacity(opacity: 0.7, child: lessonWidget),
+                  childWhenDragging: Opacity(opacity: 0.3, child: lessonWidget),
                   child: lessonWidget,
                 );
               }).toList(),
@@ -438,8 +444,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             icon: const Icon(Icons.chevron_left),
             onPressed: () {
               setState(() {
-                _focusedDateForTable =
-                    _focusedDateForTable.subtract(const Duration(days: 3));
+                _focusedDateForTable = _focusedDateForTable.subtract(
+                  const Duration(days: 3),
+                );
               });
             },
           ),
@@ -451,8 +458,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             icon: const Icon(Icons.chevron_right),
             onPressed: () {
               setState(() {
-                _focusedDateForTable =
-                    _focusedDateForTable.add(const Duration(days: 3));
+                _focusedDateForTable = _focusedDateForTable.add(
+                  const Duration(days: 3),
+                );
               });
             },
           ),
@@ -462,13 +470,15 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   Widget _buildTableView() {
-    // We use _focusedDateForTable as the starting point for our 3-day view.
-    final daysToDisplay =
-        List.generate(3, (index) => _focusedDateForTable.add(Duration(days: index)));
+    final daysToDisplay = List.generate(
+      3,
+      (index) => _focusedDateForTable.add(Duration(days: index)),
+    );
     final timeSlots = List.generate(
-        15, (index) => TimeOfDay(hour: 8 + index, minute: 0)); // 8 AM to 10 PM
+      15,
+      (index) => TimeOfDay(hour: 8 + index, minute: 0),
+    );
 
-    // Filter lessons for the current 3-day view
     final viewLessons = <DateTime, List<Map<String, dynamic>>>{};
     final firstDay = daysToDisplay.first;
     final lastDay = daysToDisplay.last;
@@ -485,35 +495,38 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         Expanded(
           child: GestureDetector(
             onHorizontalDragEnd: (details) {
-              if (details.primaryVelocity == 0) return; // no swipe
+              if (details.primaryVelocity == 0) return;
               if (details.primaryVelocity! > 0) {
-                // Swiped right
                 setState(() {
-                  _focusedDateForTable =
-                      _focusedDateForTable.subtract(const Duration(days: 3));
+                  _focusedDateForTable = _focusedDateForTable.subtract(
+                    const Duration(days: 3),
+                  );
                 });
               } else {
-                // Swiped left
                 setState(() {
-                  _focusedDateForTable =
-                      _focusedDateForTable.add(const Duration(days: 3));
+                  _focusedDateForTable = _focusedDateForTable.add(
+                    const Duration(days: 3),
+                  );
                 });
               }
             },
             child: SingleChildScrollView(
               child: Table(
                 border: TableBorder.all(color: Colors.grey.shade300),
-              columnWidths: const {
-                0: IntrinsicColumnWidth(), // Time column
-                1: FlexColumnWidth(),
-                2: FlexColumnWidth(),
-                3: FlexColumnWidth(),
-              },
-              children: [
-                _buildHeaderRow(daysToDisplay),
-                ...timeSlots.map((time) =>
-                    _buildTimeSlotRow(time, daysToDisplay, viewLessons)),
-              ],
+                columnWidths: const {
+                  0: IntrinsicColumnWidth(),
+                  1: FlexColumnWidth(),
+                  2: FlexColumnWidth(),
+                  3: FlexColumnWidth(),
+                },
+                children: [
+                  _buildHeaderRow(daysToDisplay),
+                  ...timeSlots.map(
+                    (time) =>
+                        _buildTimeSlotRow(time, daysToDisplay, viewLessons),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

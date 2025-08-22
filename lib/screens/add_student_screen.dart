@@ -150,11 +150,13 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                   endTime.hour,
                   endTime.minute,
                 );
-                lessonsToCreate.add(Lesson(
-                  studentId: studentId,
-                  startTime: lessonStartTime,
-                  endTime: lessonEndTime,
-                ));
+                lessonsToCreate.add(
+                  Lesson(
+                    studentId: studentId,
+                    startTime: lessonStartTime,
+                    endTime: lessonEndTime,
+                  ),
+                );
               }
               currentDate = currentDate.add(const Duration(days: 1));
             }
@@ -251,7 +253,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           ),
         ],
       ),
-      
+
       body: Form(
         key: _formKey,
         child: ListView(
@@ -271,10 +273,14 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Имя *',
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Пожалуйста, введите имя';
+                      if (value == null || value.isEmpty)
+                        return 'Пожалуйста, введите имя';
                       return null;
                     },
                   ),
@@ -284,7 +290,10 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Фамилия',
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                   ),
                 ],
@@ -305,7 +314,10 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Телефон',
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                     keyboardType: TextInputType.phone,
                   ),
@@ -315,36 +327,33 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Email',
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                     keyboardType: TextInputType.emailAddress,
                   ),
-                ],
-              ),
-            ),
-
-            _buildSectionTitle('Мессенджеры'),
-            Card(
-              color: Colors.white,
-              margin: const EdgeInsets.symmetric(vertical: 4.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              child: Column(
-                children: [
+                  const Divider(height: 1, color: Colors.grey),
                   ..._messengers.map((messenger) {
                     return ListTile(
-                      title: Text('${messenger['type']}: ${messenger['value']}'),
+                      title: Text(
+                        '${messenger['type']}: ${messenger['value']}',
+                      ),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => setState(() => _messengers.remove(messenger)),
+                        onPressed: () =>
+                            setState(() => _messengers.remove(messenger)),
                       ),
                     );
                   }),
                   const Divider(height: 1, color: Colors.grey),
                   ListTile(
                     leading: const Icon(Icons.add, color: Colors.deepPurple),
-                    title: const Text('Добавить мессенджер', style: TextStyle(color: Colors.deepPurple)),
+                    title: const Text(
+                      'Добавить мессенджер',
+                      style: TextStyle(color: Colors.deepPurple),
+                    ),
                     onTap: _showAddMessengerDialog,
                   ),
                 ],
@@ -365,23 +374,111 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Цена за одно занятие *',
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                     keyboardType: TextInputType.number,
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Пожалуйста, введите цену';
-                      if (double.tryParse(value) == null) return 'Пожалуйста, введите число';
+                      if (value == null || value.isEmpty)
+                        return 'Пожалуйста, введите цену';
+                      if (double.tryParse(value) == null)
+                        return 'Пожалуйста, введите число';
                       return null;
                     },
                   ),
                   const Divider(height: 1, color: Colors.grey),
                   CheckboxListTile(
-                    title: const Text('После проведения занятия считать его автоматически оплаченным'),
+                    title: const Text(
+                      'После проведения занятия считать его автоматически оплаченным',
+                    ),
                     value: _autoPay,
-                    onChanged: (bool? value) => setState(() => _autoPay = value ?? false),
+                    onChanged: (bool? value) =>
+                        setState(() => _autoPay = value ?? false),
                     controlAffinity: ListTileControlAffinity.leading,
                     activeColor: Colors.deepPurple,
                   ),
+                ],
+              ),
+            ),
+
+            _buildSectionTitle('Занятия'),
+            Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: Column(
+                children: [
+                  ..._lessonDays.map((lesson) {
+                    final startTime = (lesson['startTime'] as TimeOfDay).format(
+                      context,
+                    );
+                    final endTime = (lesson['endTime'] as TimeOfDay).format(
+                      context,
+                    );
+                    return ListTile(
+                      title: Text('${lesson['day']} - $startTime-$endTime'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () =>
+                            setState(() => _lessonDays.remove(lesson)),
+                      ),
+                    );
+                  }),
+                  ListTile(
+                    leading: const Icon(Icons.add, color: Colors.deepPurple),
+                    title: const Text(
+                      'Добавить день занятия',
+                      style: TextStyle(color: Colors.deepPurple),
+                    ),
+                    onTap: _showAddLessonDayDialog,
+                  ),
+                  const Divider(height: 1),
+                  CheckboxListTile(
+                    title: const Text('Дублировать занятия'),
+                    value: _duplicateLessons,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        _duplicateLessons = value ?? false;
+                      });
+                    },
+                    controlAffinity: ListTileControlAffinity.leading,
+                    activeColor: Colors.deepPurple,
+                  ),
+
+                  if (_duplicateLessons) ...[
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.calendar_today,
+                        color: Colors.deepPurple,
+                      ),
+                      title: const Text('С'),
+                      trailing: Text(
+                        _startDate == null
+                            ? 'Выберите дату'
+                            : DateFormat('dd.MM.yyyy').format(_startDate!),
+                      ),
+                      onTap: _selectStartDate,
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.calendar_today,
+                        color: Colors.deepPurple,
+                      ),
+                      title: const Text('По'),
+                      trailing: Text(
+                        _endDate == null
+                            ? 'Выберите дату'
+                            : DateFormat('dd.MM.yyyy').format(_endDate!),
+                      ),
+                      onTap: _selectEndDate,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -398,71 +495,12 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                 decoration: const InputDecoration(
                   hintText: 'Добавьте примечание...',
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                 ),
                 maxLines: 3,
-              ),
-            ),
-            
-            _buildSectionTitle('Занятия'),
-            Card(
-              color: Colors.white,
-              margin: const EdgeInsets.symmetric(vertical: 4.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              child: Column(
-                children: [
-                  ..._lessonDays.map((lesson) {
-                    final startTime = (lesson['startTime'] as TimeOfDay).format(context);
-                    final endTime = (lesson['endTime'] as TimeOfDay).format(context);
-                    return ListTile(
-                      title: Text('${lesson['day']} - $startTime-$endTime'),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => setState(() => _lessonDays.remove(lesson)),
-                      ),
-                    );
-                  }),
-                  ListTile(
-                    leading: const Icon(Icons.add, color: Colors.deepPurple),
-                    title: const Text('Добавить день занятия', style: TextStyle(color: Colors.deepPurple)),
-                    onTap: _showAddLessonDayDialog,
-                  ),
-                  const Divider(height: 1),
-                  CheckboxListTile(
-                    title: const Text('Дублировать занятия'),
-                    value: _duplicateLessons,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _duplicateLessons = value ?? false;
-                      });
-                    },
-                    controlAffinity: ListTileControlAffinity.leading,
-                    activeColor: Colors.deepPurple,
-                  ),
-                  
-                  if (_duplicateLessons) ...[
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
-                      title: const Text('С'),
-                      trailing: Text(_startDate == null
-                          ? 'Выберите дату'
-                          : DateFormat('dd.MM.yyyy').format(_startDate!)),
-                      onTap: _selectStartDate,
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
-                      title: const Text('По'),
-                      trailing: Text(_endDate == null
-                          ? 'Выберите дату'
-                          : DateFormat('dd.MM.yyyy').format(_endDate!)),
-                      onTap: _selectEndDate,
-                    ),
-                  ],
-                ],
               ),
             ),
           ],
@@ -477,9 +515,9 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       child: Text(
         title.toUpperCase(),
         style: const TextStyle(
-          color: Colors.white,
+          color: Colors.deepPurple,
           fontWeight: FontWeight.bold,
-          fontSize: 14
+          fontSize: 14,
         ),
       ),
     );
@@ -531,12 +569,23 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                   DropdownButtonFormField<String>(
                     value: selectedDay,
                     hint: const Text('Выберите день недели'),
-                    items: [
-                      'Понедельник', 'Вторник', 'Среда', 'Четверг',
-                      'Пятница', 'Суббота', 'Воскресенье'
-                    ]
-                        .map((day) => DropdownMenuItem(value: day, child: Text(day)))
-                        .toList(),
+                    items:
+                        [
+                              'Понедельник',
+                              'Вторник',
+                              'Среда',
+                              'Четверг',
+                              'Пятница',
+                              'Суббота',
+                              'Воскресенье',
+                            ]
+                            .map(
+                              (day) => DropdownMenuItem(
+                                value: day,
+                                child: Text(day),
+                              ),
+                            )
+                            .toList(),
                     onChanged: (value) {
                       setDialogState(() {
                         selectedDay = value;
@@ -583,7 +632,9 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                 ),
                 TextButton(
                   onPressed: () {
-                    if (selectedDay != null && startTime != null && endTime != null) {
+                    if (selectedDay != null &&
+                        startTime != null &&
+                        endTime != null) {
                       setState(() {
                         _lessonDays.add({
                           'day': selectedDay,

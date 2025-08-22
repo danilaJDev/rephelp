@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:rephelp/utils/app_colors.dart';
 
 import 'package:rephelp/screens/students_screen.dart';
 import 'package:rephelp/screens/schedule_screen.dart';
@@ -22,7 +21,7 @@ class RepHelpApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Помощник репетитора',
+      title: 'RepHelp',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: const Color(0xFFf0f0f0),

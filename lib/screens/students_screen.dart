@@ -41,7 +41,6 @@ class _StudentsScreenState extends State<StudentsScreen>
     super.dispose();
   }
 
-  // Метод для загрузки учеников из базы данных
   Future<void> _loadStudents() async {
     final database = AppDatabase();
     final activeStudents = await database.getStudents(isArchived: false);

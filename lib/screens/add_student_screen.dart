@@ -277,7 +277,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
               _buildSectionTitle('Примечания'),
               TextFormField(
                 controller: _notesController,
-                maxLines: 3,
               ),
             ],
           ),

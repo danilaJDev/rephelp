@@ -58,7 +58,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         lessonsWithStudents.add({'lesson': lesson, 'student': student});
       } catch (e) {
         // Student not found for this lesson, maybe log this error
-        print('Error: Student with id ${lesson.studentId} not found for lesson ${lesson.id}');
+        print(
+          'Error: Student with id ${lesson.studentId} not found for lesson ${lesson.id}',
+        );
       }
     }
     if (!mounted) return;
@@ -78,7 +80,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   Map<DateTime, List<Map<String, dynamic>>> _groupAndPairLessons(
-      List<Lesson> lessons, List<Student> students) {
+    List<Lesson> lessons,
+    List<Student> students,
+  ) {
     final Map<DateTime, List<Map<String, dynamic>>> data = {};
     for (var lesson in lessons) {
       try {

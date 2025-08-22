@@ -19,15 +19,60 @@ class RepHelpApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const primaryColor = Colors.deepPurple;
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'RepHelp',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: const Color(0xFFf0f0f0),
-        colorScheme: ColorScheme.fromSwatch().copyWith(
-          primary: Colors.deepPurple,
-          secondary: Colors.deepPurple,
+        // Основная цветовая схема
+        primarySwatch: primaryColor,
+        scaffoldBackgroundColor: const Color(0xFFF5F5F8),
+        colorScheme: ColorScheme.fromSwatch(
+          primarySwatch: primaryColor,
+          accentColor: primaryColor,
+          backgroundColor: const Color(0xFFF5F5F8),
+          cardColor: Colors.white,
+        ).copyWith(secondary: primaryColor),
+        // Тема для AppBar
+        appBarTheme: const AppBarTheme(
+          backgroundColor: primaryColor,
+          elevation: 0,
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+        // Тема для карточек
+        cardTheme: CardThemeData(
+          elevation: 1,
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+        ),
+        // Тема для полей ввода
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.0),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.0),
+            borderSide: const BorderSide(color: primaryColor),
+          ),
+        ),
+        // Тема для нижней навигации
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: primaryColor,
+          unselectedItemColor: Colors.grey,
+          backgroundColor: Colors.white,
+          elevation: 2,
         ),
       ),
       home: const MainScreen(),
@@ -43,7 +88,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 1;
+  int _selectedIndex = 0;
 
   static const List<Widget> _screens = <Widget>[
     ScheduleScreen(),
@@ -61,27 +106,31 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_selectedIndex],
+      body: IndexedStack(index: _selectedIndex, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
+            icon: Icon(Icons.calendar_today_outlined),
+            activeIcon: Icon(Icons.calendar_today),
             label: 'Расписание',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Ученики'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.attach_money),
+            icon: Icon(Icons.people_outline),
+            activeIcon: Icon(Icons.people),
+            label: 'Ученики',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            activeIcon: Icon(Icons.account_balance_wallet),
             label: 'Финансы',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
+            icon: Icon(Icons.bar_chart_outlined),
+            activeIcon: Icon(Icons.bar_chart),
             label: 'Аналитика',
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.deepPurple,
-        unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
       ),
     );

@@ -125,9 +125,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               unselectedLabelColor: Colors.white70,
               indicatorColor: Colors.white,
               tabs: const [
-                Tab(text: 'Список'),
-                Tab(text: 'Таблица'),
-                Tab(text: 'Календарь'),
+                Tab(icon: Icon(Icons.list_alt), text: 'Список'),
+                Tab(icon: Icon(Icons.table_chart), text: 'Таблица'),
+                Tab(icon: Icon(Icons.calendar_month), text: 'Календарь'),
               ],
             ),
           ),

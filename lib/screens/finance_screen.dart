@@ -84,11 +84,13 @@ class _FinanceScreenState extends State<FinanceScreen> {
               'Всего заработано',
               '${_totalEarned.toStringAsFixed(0)} ₽',
               Colors.green,
+              Icons.account_balance_wallet,
             ),
             _buildSummaryItem(
               'Ожидается оплата',
               '${_unpaidAmount.toStringAsFixed(0)} ₽',
               Colors.orange,
+              Icons.hourglass_bottom,
             ),
           ],
         ),
@@ -96,9 +98,16 @@ class _FinanceScreenState extends State<FinanceScreen> {
     );
   }
 
-  Widget _buildSummaryItem(String title, String value, Color color) {
+  Widget _buildSummaryItem(
+    String title,
+    String value,
+    Color color,
+    IconData icon,
+  ) {
     return Column(
       children: [
+        Icon(icon, color: color, size: 28),
+        const SizedBox(height: 8),
         Text(title, style: const TextStyle(color: Colors.grey, fontSize: 14)),
         const SizedBox(height: 4),
         Text(
@@ -132,16 +141,10 @@ class _FinanceScreenState extends State<FinanceScreen> {
 
         return Card(
           child: ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: (isPaid ? Colors.green : Colors.red),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                isPaid ? Icons.check_circle_outline : Icons.highlight_off,
-                color: isPaid ? Colors.green : Colors.red,
-              ),
+            leading: Icon(
+              isPaid ? Icons.check_circle : Icons.cancel,
+              color: isPaid ? Colors.green : Colors.red,
+              size: 30,
             ),
             title: Text(
               lesson['name'] as String,

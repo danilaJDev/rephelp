@@ -96,7 +96,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       body: Column(
         children: [
           Container(
-            color: Colors.deepPurple,
+            decoration: const BoxDecoration(
+              color: Colors.deepPurple,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+            ),
             child: TabBar(
               controller: _tabController,
               labelColor: Colors.white,

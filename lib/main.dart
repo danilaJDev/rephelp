@@ -28,8 +28,8 @@ class RepHelpApp extends StatelessWidget {
         primarySwatch: Colors.blue, // Will be overridden by lavender
         scaffoldBackgroundColor: const Color(0xFFf0f0f0),
         colorScheme: ColorScheme.fromSwatch().copyWith(
-          primary: AppColors.lavender,
-          secondary: AppColors.lavender,
+          primary: Colors.deepPurple,
+          secondary: Colors.deepPurple,
         ),
       ),
       home: const MainScreen(),
@@ -82,7 +82,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: AppColors.lavender,
+        selectedItemColor: Colors.deepPurple,
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
       ),

@@ -545,7 +545,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                   ),
                   const SizedBox(height: 16),
                   ListTile(
-                    title: Text(startTime == null ? 'Начало' : startTime.format(context)),
+                    title: Text(startTime?.format(context) ?? 'Начало'),
                     trailing: const Icon(Icons.access_time),
                     onTap: () async {
                       final time = await showTimePicker(
@@ -560,7 +560,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     },
                   ),
                   ListTile(
-                    title: Text(endTime == null ? 'Конец' : endTime.format(context)),
+                    title: Text(endTime?.format(context) ?? 'Конец'),
                     trailing: const Icon(Icons.access_time),
                     onTap: () async {
                       final time = await showTimePicker(

@@ -28,7 +28,7 @@ class AppDatabase {
     String path = join(databasesPath, 'rephelp_database.db');
 
     return await openDatabase(path,
-        version: 2, onCreate: _onCreate, onUpgrade: _onUpgrade);
+        version: 3, onCreate: _onCreate, onUpgrade: _onUpgrade);
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -42,7 +42,8 @@ class AppDatabase {
         messengers TEXT,
         price REAL NOT NULL,
         autoPay INTEGER NOT NULL,
-        notes TEXT
+        notes TEXT,
+        is_archived INTEGER NOT NULL DEFAULT 0
       )
     ''');
 
@@ -78,6 +79,11 @@ class AppDatabase {
       ALTER TABLE students ADD COLUMN autoPay INTEGER NOT NULL DEFAULT 0
     ''');
     }
+    if (oldVersion < 3) {
+      await db.execute('''
+      ALTER TABLE students ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0
+    ''');
+    }
   }
 
   // --- Методы для работы с учениками ---
@@ -89,13 +95,28 @@ class AppDatabase {
   }
 
   // Чтение (получение) всех учеников
-  Future<List<Student>> getStudents() async {
+  Future<List<Student>> getStudents({bool isArchived = false}) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('students');
+    final List<Map<String, dynamic>> maps = await db.query(
+      'students',
+      where: 'is_archived = ?',
+      whereArgs: [isArchived ? 1 : 0],
+    );
 
     return List.generate(maps.length, (i) {
       return Student.fromMap(maps[i]);
     });
+  }
+
+  // Архивирование/разархивирование ученика
+  Future<int> setStudentArchived(int id, bool isArchived) async {
+    final db = await database;
+    return await db.update(
+      'students',
+      {'is_archived': isArchived ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   // Обновление данных ученика

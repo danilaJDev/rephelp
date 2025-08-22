@@ -10,6 +10,7 @@ class Student {
   final double price;
   final bool autoPay;
   final String? notes;
+  final bool isArchived;
 
   Student({
     this.id,
@@ -21,6 +22,7 @@ class Student {
     required this.price,
     required this.autoPay,
     this.notes,
+    this.isArchived = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -34,6 +36,7 @@ class Student {
       'price': price,
       'autoPay': autoPay ? 1 : 0, // Store bool as int
       'notes': notes,
+      'is_archived': isArchived ? 1 : 0,
     };
   }
 
@@ -48,6 +51,7 @@ class Student {
       price: map['price'] as double,
       autoPay: map['autoPay'] == 1, // Read int as bool
       notes: map['notes'] as String?,
+      isArchived: map['is_archived'] == 1,
     );
   }
 }

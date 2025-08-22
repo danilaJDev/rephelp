@@ -23,7 +23,13 @@ class RepHelpApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Помощник репетитора',
-      theme: ThemeData(primarySwatch: Colors.blueGrey),
+      theme: ThemeData(
+        primarySwatch: Colors.red,
+        scaffoldBackgroundColor: const Color(0xFFf0f0f0),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.redAccent,
+        ),
+      ),
       home: const MainScreen(),
     );
   }
@@ -39,7 +45,6 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 1;
 
-  // Заглушки экранов
   static const List<Widget> _screens = <Widget>[
     ScheduleScreen(),
     StudentsScreen(),
@@ -56,25 +61,6 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Помощник репетитора'),
-        backgroundColor: Colors.blueGrey,
-        actions: _selectedIndex == 1
-            ? [
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AddStudentScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ]
-            : null,
-      ),
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
@@ -94,7 +80,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blueGrey,
+        selectedItemColor: Colors.redAccent,
         onTap: _onItemTapped,
       ),
     );

@@ -4,6 +4,8 @@ import 'package:rephelp/models/student.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:rephelp/models/lesson.dart';
+import 'package:rephelp/utils/app_colors.dart';
+import 'package:rephelp/widgets/custom_app_bar.dart';
 
 class AddStudentScreen extends StatefulWidget {
   final Student? student;
@@ -173,112 +175,149 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: TextButton.icon(
-          onPressed: () => Navigator.pop(context),
+      appBar: CustomAppBar(
+        title: widget.student == null ? 'Новый ученик' : 'Редактировать',
+        leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          label: const Text('Назад', style: TextStyle(color: Colors.white)),
+          onPressed: () => Navigator.pop(context),
         ),
-        leadingWidth: 100,
-        title: Text(widget.student == null ? 'Новый ученик' : 'Редактировать'),
         actions: [
           IconButton(
             icon: Icon(
-              Icons.check_circle,
-              color: _isFormValid ? Colors.white : Colors.grey,
+              Icons.check,
+              color: _isFormValid ? Colors.white : Colors.white54,
             ),
             onPressed: _isFormValid ? _saveStudent : null,
           ),
         ],
-        backgroundColor: Colors.blueGrey,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              _buildSectionTitle('Общая информация'),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Имя *'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Пожалуйста, введите имя';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _surnameController,
-                decoration: const InputDecoration(labelText: 'Фамилия'),
-              ),
-              const SizedBox(height: 20),
-              _buildSectionTitle('Контакты'),
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Телефон'),
-                keyboardType: TextInputType.phone,
-              ),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 10),
-              ..._messengers.map((messenger) {
-                return ListTile(
-                  title: Text('${messenger['type']}: ${messenger['value']}'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () {
-                      setState(() {
-                        _messengers.remove(messenger);
-                      });
+      backgroundColor: AppColors.background,
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16.0),
+          children: [
+            _buildSectionTitle('Общая информация'),
+            Card(
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Имя *',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return 'Пожалуйста, введите имя';
+                      return null;
                     },
                   ),
-                );
-              }),
-              ElevatedButton.icon(
-                onPressed: _showAddMessengerDialog,
-                icon: const Icon(Icons.add),
-                label: const Text('Добавить мессенджер'),
+                  const Divider(height: 1),
+                  TextFormField(
+                    controller: _surnameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Фамилия',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-              _buildSectionTitle('Финансы'),
-              TextFormField(
-                controller: _priceController,
+            ),
+
+            _buildSectionTitle('Контакты'),
+            Card(
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _phoneController,
+                    decoration: const InputDecoration(
+                      labelText: 'Телефон',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const Divider(height: 1),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                ],
+              ),
+            ),
+
+            _buildSectionTitle('Мессенджеры'),
+            Card(
+              child: Column(
+                children: [
+                  ..._messengers.map((messenger) {
+                    return ListTile(
+                      title: Text('${messenger['type']}: ${messenger['value']}'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => setState(() => _messengers.remove(messenger)),
+                      ),
+                    );
+                  }),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.add, color: Colors.deepPurple),
+                    title: const Text('Добавить мессенджер', style: TextStyle(color: Colors.deepPurple)),
+                    onTap: _showAddMessengerDialog,
+                  ),
+                ],
+              ),
+            ),
+
+            _buildSectionTitle('Финансы'),
+            Card(
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _priceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Цена за одно занятие *',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return 'Пожалуйста, введите цену';
+                      if (double.tryParse(value) == null) return 'Пожалуйста, введите число';
+                      return null;
+                    },
+                  ),
+                  const Divider(height: 1),
+                  CheckboxListTile(
+                    title: const Text('После проведения занятия считать его автоматически оплаченным'),
+                    value: _autoPay,
+                    onChanged: (bool? value) => setState(() => _autoPay = value ?? false),
+                    controlAffinity: ListTileControlAffinity.leading,
+                  ),
+                ],
+              ),
+            ),
+
+            _buildSectionTitle('Примечания'),
+            Card(
+              child: TextFormField(
+                controller: _notesController,
                 decoration: const InputDecoration(
-                  labelText: 'Цена за одно занятие *',
+                  hintText: 'Добавьте примечание...',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Пожалуйста, введите цену';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Пожалуйста, введите число';
-                  }
-                  return null;
-                },
+                maxLines: 3,
               ),
-              CheckboxListTile(
-                title: const Text(
-                  'После проведения занятия считать его автоматически оплаченным',
-                ),
-                value: _autoPay,
-                onChanged: (bool? value) {
-                  setState(() {
-                    _autoPay = value ?? false;
-                  });
-                },
-                controlAffinity: ListTileControlAffinity.leading,
-              ),
-              const SizedBox(height: 20),
-              _buildSectionTitle('Примечания'),
-              TextFormField(controller: _notesController),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -286,10 +325,14 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.fromLTRB(8, 24, 8, 8),
       child: Text(
-        title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        title.toUpperCase(),
+        style: const TextStyle(
+          color: AppColors.mutedText,
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
       ),
     );
   }

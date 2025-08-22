@@ -23,6 +23,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   List<Map<String, dynamic>> _lessons = [];
   List<Student> _students = [];
   Map<DateTime, List<Map<String, dynamic>>> _allLessons = {};
+  DateTime _focusedDateForTable = DateTime.now();
 
   @override
   void initState() {
@@ -323,8 +324,230 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     );
   }
 
+  TableRow _buildHeaderRow(List<DateTime> daysOfWeek) {
+    final format = DateFormat('E, d', 'ru_RU');
+    return TableRow(
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+      ),
+      children: [
+        const Center(
+            child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text('Время',
+                    style: TextStyle(fontWeight: FontWeight.bold)))),
+        ...daysOfWeek.map((day) => Center(
+            child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(format.format(day),
+                    style: const TextStyle(fontWeight: FontWeight.bold))))),
+      ],
+    );
+  }
+
+  List<Map<String, dynamic>> _getLessonsForSlot(DateTime day,
+      TimeOfDay time, Map<DateTime, List<Map<String, dynamic>>> weekLessons) {
+    final dayKey = DateTime(day.year, day.month, day.day);
+    if (!weekLessons.containsKey(dayKey)) {
+      return [];
+    }
+    final lessonsForDay = weekLessons[dayKey]!;
+    return lessonsForDay.where((lessonData) {
+      final lesson = lessonData['lesson'] as Lesson;
+      final lessonTime = TimeOfDay.fromDateTime(lesson.startTime);
+      // Check if lesson starts within this hour slot
+      return lessonTime.hour == time.hour;
+    }).toList();
+  }
+
+  TableRow _buildTimeSlotRow(
+      TimeOfDay time,
+      List<DateTime> daysOfWeek,
+      Map<DateTime, List<Map<String, dynamic>>> weekLessons) {
+    return TableRow(
+      children: [
+        Center(
+            child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                    '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}'))),
+        ...daysOfWeek.map((day) {
+          final lessonsInSlot = _getLessonsForSlot(day, time, weekLessons);
+          if (lessonsInSlot.isEmpty) {
+            return DragTarget<Lesson>(
+              builder: (context, candidateData, rejectedData) {
+                return Container(height: 60); // Empty cell
+              },
+              onWillAccept: (data) => true,
+              onAccept: (data) {
+                // Handle lesson drop here
+              },
+            );
+          }
+          return Container(
+            padding: const EdgeInsets.all(2.0),
+            child: Column(
+              children: lessonsInSlot.map((lessonData) {
+                final lesson = lessonData['lesson'] as Lesson;
+                final student = lessonData['student'] as Student;
+                final startTime = DateFormat('HH:mm').format(lesson.startTime);
+                final endTime = DateFormat('HH:mm').format(lesson.endTime);
+                final timeRange = '$startTime-$endTime';
+
+                // Format student name
+                String studentDisplayName = student.name;
+                if (student.surname != null && student.surname!.isNotEmpty) {
+                  studentDisplayName += ' ${student.surname![0]}.';
+                }
+
+                final lessonWidget = Card(
+                  elevation: 2,
+                  color: Colors.deepPurple,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          studentDisplayName,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          timeRange,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.white70,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+
+                return Draggable<Lesson>(
+                  data: lesson,
+                  feedback: Opacity(
+                    opacity: 0.7,
+                    child: lessonWidget,
+                  ),
+                  childWhenDragging: Opacity(
+                    opacity: 0.3,
+                    child: lessonWidget,
+                  ),
+                  child: lessonWidget,
+                );
+              }).toList(),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildTableNavigator() {
+    final startDate = _focusedDateForTable;
+    final endDate = startDate.add(const Duration(days: 2));
+    final format = DateFormat('d MMM', 'ru_RU');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: () {
+              setState(() {
+                _focusedDateForTable =
+                    _focusedDateForTable.subtract(const Duration(days: 3));
+              });
+            },
+          ),
+          Text(
+            '${format.format(startDate)} - ${format.format(endDate)}',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: () {
+              setState(() {
+                _focusedDateForTable =
+                    _focusedDateForTable.add(const Duration(days: 3));
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTableView() {
-    return const Center(child: Text('Таблица (в разработке)'));
+    // We use _focusedDateForTable as the starting point for our 3-day view.
+    final daysToDisplay =
+        List.generate(3, (index) => _focusedDateForTable.add(Duration(days: index)));
+    final timeSlots = List.generate(
+        15, (index) => TimeOfDay(hour: 8 + index, minute: 0)); // 8 AM to 10 PM
+
+    // Filter lessons for the current 3-day view
+    final viewLessons = <DateTime, List<Map<String, dynamic>>>{};
+    final firstDay = daysToDisplay.first;
+    final lastDay = daysToDisplay.last;
+    _allLessons.forEach((day, lessons) {
+      final dayOnly = DateTime(day.year, day.month, day.day);
+      if (!dayOnly.isBefore(firstDay) && !dayOnly.isAfter(lastDay)) {
+        viewLessons[dayOnly] = lessons;
+      }
+    });
+
+    return Column(
+      children: [
+        _buildTableNavigator(),
+        Expanded(
+          child: GestureDetector(
+            onHorizontalDragEnd: (details) {
+              if (details.primaryVelocity == 0) return; // no swipe
+              if (details.primaryVelocity! > 0) {
+                // Swiped right
+                setState(() {
+                  _focusedDateForTable =
+                      _focusedDateForTable.subtract(const Duration(days: 3));
+                });
+              } else {
+                // Swiped left
+                setState(() {
+                  _focusedDateForTable =
+                      _focusedDateForTable.add(const Duration(days: 3));
+                });
+              }
+            },
+            child: SingleChildScrollView(
+              child: Table(
+                border: TableBorder.all(color: Colors.grey.shade300),
+              columnWidths: const {
+                0: IntrinsicColumnWidth(), // Time column
+                1: FlexColumnWidth(),
+                2: FlexColumnWidth(),
+                3: FlexColumnWidth(),
+              },
+              children: [
+                _buildHeaderRow(daysToDisplay),
+                ...timeSlots.map((time) =>
+                    _buildTimeSlotRow(time, daysToDisplay, viewLessons)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildCalendarView() {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rephelp/widgets/custom_app_bar.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:rephelp/models/lesson.dart';
@@ -79,6 +80,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: const CustomAppBar(title: 'Расписание'),
       body: Column(
         children: [
           TableCalendar(

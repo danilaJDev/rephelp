@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:intl/intl.dart';
+import 'package:rephelp/widgets/custom_app_bar.dart';
 
 class FinanceScreen extends StatefulWidget {
   const FinanceScreen({super.key});
@@ -56,50 +57,53 @@ class _FinanceScreenState extends State<FinanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: const CustomAppBar(title: 'Финансы'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
                 // Блок с общей финансовой статистикой
-                Container(
-                  padding: const EdgeInsets.all(16.0),
-                  color: Colors.blueGrey,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Column(
-                        children: [
-                          const Text(
-                            'Общий доход',
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                          Text(
-                            '${_totalEarned.toStringAsFixed(0)} ₽',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
+                Card(
+                  margin: const EdgeInsets.all(8),
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Column(
+                          children: [
+                            const Text(
+                              'Общий доход',
+                              style: TextStyle(color: Colors.grey),
                             ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          const Text(
-                            'Неоплачено',
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                          Text(
-                            '${_unpaidAmount.toStringAsFixed(0)} ₽',
-                            style: const TextStyle(
-                              color: Colors.orange,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
+                            Text(
+                              '${_totalEarned.toStringAsFixed(0)} ₽',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            const Text(
+                              'Неоплачено',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            Text(
+                              '${_unpaidAmount.toStringAsFixed(0)} ₽',
+                              style: const TextStyle(
+                                color: Colors.orange,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 // Список занятий

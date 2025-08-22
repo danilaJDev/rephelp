@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:rephelp/utils/app_colors.dart';
 
 import 'package:rephelp/screens/students_screen.dart';
 import 'package:rephelp/screens/schedule_screen.dart';
@@ -24,10 +25,11 @@ class RepHelpApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Помощник репетитора',
       theme: ThemeData(
-        primarySwatch: Colors.red,
+        primarySwatch: Colors.blue, // Will be overridden by lavender
         scaffoldBackgroundColor: const Color(0xFFf0f0f0),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.redAccent,
+        colorScheme: ColorScheme.fromSwatch().copyWith(
+          primary: AppColors.lavender,
+          secondary: AppColors.lavender,
         ),
       ),
       home: const MainScreen(),
@@ -80,7 +82,8 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.redAccent,
+        selectedItemColor: AppColors.lavender,
+        unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
       ),
     );

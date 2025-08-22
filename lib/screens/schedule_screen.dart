@@ -208,13 +208,28 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     final startTime = DateFormat('HH:mm').format(lesson.startTime);
     final endTime = DateFormat('HH:mm').format(lesson.endTime);
     final studentName = '${student.name} ${student.surname ?? ''}';
+    final hasNotes = lesson.notes != null && lesson.notes!.isNotEmpty;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: ListTile(
         title: Text('$startTime - $endTime'),
-        subtitle: Text(studentName),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(studentName),
+            if (hasNotes) ...[
+              const SizedBox(height: 4),
+              Text(
+                lesson.notes!,
+                style: TextStyle(color: Colors.grey[600]),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+        ),
         trailing: IconButton(
           icon: const Icon(Icons.more_vert),
           onPressed: () => _showLessonMenu(context, lesson, student),
@@ -604,30 +619,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   itemBuilder: (context, index) {
                     final lesson = _lessons[index]['lesson'] as Lesson;
                     final student = _lessons[index]['student'] as Student;
-                    return ListTile(
-                      title: Text('Занятие с ${student.name}'),
-                      subtitle: Text('Цена: ${student.price} руб.'),
-                      trailing: lesson.isPaid
-                          ? const Icon(Icons.check_circle, color: Colors.green)
-                          : const Icon(Icons.warning, color: Colors.orange),
-                      onTap: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AddLessonScreen(
-                              students: _students,
-                              selectedDate: lesson.startTime,
-                              lessonToEdit: lesson,
-                            ),
-                          ),
-                        );
-                        if (result == true) {
-                          await _loadAllData();
-                        }
-                      },
-                      onLongPress: () =>
-                          _showCancelOptionsDialog(lesson, student),
-                    );
+                    return _buildLessonCard(lesson, student);
                   },
                 ),
         ),

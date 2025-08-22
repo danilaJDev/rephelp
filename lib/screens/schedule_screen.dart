@@ -273,13 +273,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.payment, color: Colors.green),
-                title: const Text('Занятие оплачено'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
                 leading: const Icon(Icons.edit, color: Colors.blue),
                 title: const Text('Редактировать'),
                 onTap: () async {

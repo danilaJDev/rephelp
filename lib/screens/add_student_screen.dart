@@ -184,7 +184,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
               ),
               TextFormField(
                 controller: _notesController,
-                decoration: const InputDecoration(labelText: 'Заметки'),
                 maxLines: 3,
               ),
               const SizedBox(height: 20),

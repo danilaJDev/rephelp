@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:rephelp/models/student.dart';
@@ -115,7 +117,7 @@ class _StudentsScreenState extends State<StudentsScreen>
                     unselectedLabelColor: Colors.white70,
                     indicator: const UnderlineTabIndicator(
                       borderSide: BorderSide(color: Colors.white, width: 3),
-                      insets: EdgeInsets.symmetric(horizontal: 100.0),
+                      insets: EdgeInsets.symmetric(horizontal: 100),
                     ),
                     tabs: const [
                       Tab(
@@ -134,7 +136,7 @@ class _StudentsScreenState extends State<StudentsScreen>
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(10.0),
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
@@ -144,7 +146,7 @@ class _StudentsScreenState extends State<StudentsScreen>
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30.0),
+                        borderRadius: BorderRadius.circular(15.0),
                         borderSide: BorderSide.none,
                       ),
                     ),
@@ -189,13 +191,13 @@ class _StudentsScreenState extends State<StudentsScreen>
       );
     }
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 8.0),
+      padding: const EdgeInsets.only(top: 10.0),
       itemCount: students.length,
       itemBuilder: (context, index) {
         final student = students[index];
         return Card(
           color: Colors.white,
-          margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+          margin: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15.0),
           ),
@@ -203,13 +205,13 @@ class _StudentsScreenState extends State<StudentsScreen>
             leading: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.lavender,
+                color: Colors.deepPurple,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 '${index + 1}',
                 style: const TextStyle(
-                  color: AppColors.primaryText,
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -228,7 +230,7 @@ class _StudentsScreenState extends State<StudentsScreen>
                     onPressed: () => _showArchiveMenu(context, student),
                   )
                 : IconButton(
-                    icon: const Icon(Icons.archive, color: AppColors.lavender),
+                    icon: const Icon(Icons.archive, color: Colors.deepPurple),
                     onPressed: () => _toggleArchiveStatus(student.id!, true),
                   ),
           ),
@@ -248,7 +250,7 @@ class _StudentsScreenState extends State<StudentsScreen>
           title: Center(
             child: Column(
               children: [
-                const Icon(Icons.person, size: 40),
+                const Icon(Icons.person, size: 30),
                 const SizedBox(height: 10),
                 Text('${student.name} ${student.surname ?? ''}'),
               ],
@@ -260,6 +262,7 @@ class _StudentsScreenState extends State<StudentsScreen>
               ListTile(
                 leading: const Icon(Icons.unarchive),
                 title: const Text('Перенести в активные'),
+                iconColor: Colors.green,
                 onTap: () {
                   _toggleArchiveStatus(student.id!, false);
                   Navigator.of(context).pop();
@@ -267,6 +270,7 @@ class _StudentsScreenState extends State<StudentsScreen>
               ),
               ListTile(
                 leading: const Icon(Icons.delete),
+                iconColor: Colors.red,
                 title: const Text('Удалить'),
                 onTap: () {
                   _deleteStudent(student.id!);

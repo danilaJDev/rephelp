@@ -47,7 +47,7 @@ class RepHelpApp extends StatelessWidget {
           elevation: 0,
           titleTextStyle: TextStyle(
             color: Colors.white,
-            fontSize: 20,
+            fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
           iconTheme: IconThemeData(color: Colors.white),

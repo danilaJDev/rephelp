@@ -115,6 +115,13 @@ class _StudentsScreenState extends State<StudentsScreen>
                       borderSide: BorderSide(color: Colors.white, width: 3),
                       insets: EdgeInsets.symmetric(horizontal: 100),
                     ),
+
+                    labelStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    unselectedLabelStyle: const TextStyle(fontSize: 14),
+
                     tabs: const [
                       Tab(
                         icon: Icon(Icons.person),

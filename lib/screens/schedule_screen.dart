@@ -124,6 +124,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white70,
               indicatorColor: Colors.white,
+
+              labelStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+              unselectedLabelStyle: const TextStyle(fontSize: 14),
+
               tabs: const [
                 Tab(icon: Icon(Icons.list_alt), text: 'Список'),
                 Tab(icon: Icon(Icons.table_chart), text: 'Таблица'),
@@ -184,12 +191,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         return Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.fromLTRB(8, 15, 8, 8),
               child: Text(
                 formattedDate,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 18,
                 ),
               ),
             ),

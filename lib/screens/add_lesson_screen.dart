@@ -33,6 +33,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   bool _duplicateLessons = false;
   DateTime? _duplicationStartDate;
   DateTime? _duplicationEndDate;
+  bool _applyToFutureLessons = false;
 
   @override
   void initState() {
@@ -89,7 +90,46 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
 
     final database = AppDatabase();
 
-    if (_duplicateLessons &&
+    if (_applyToFutureLessons && widget.lessonToEdit != null) {
+      final originalLesson = widget.lessonToEdit!;
+      final lessonsToUpdate = await database.getFutureRecurringLessons(
+        originalLesson.studentId,
+        originalLesson.startTime,
+      );
+
+      final dayDifference = _lessonDate.weekday - originalLesson.startTime.weekday;
+
+      final updatedLessons = lessonsToUpdate.map((lesson) {
+        final newDate = lesson.startTime.add(Duration(days: dayDifference));
+        final newStartTime = DateTime(
+          newDate.year,
+          newDate.month,
+          newDate.day,
+          _startTime!.hour,
+          _startTime!.minute,
+        );
+        final newEndTime = DateTime(
+          newDate.year,
+          newDate.month,
+          newDate.day,
+          _endTime!.hour,
+          _endTime!.minute,
+        );
+
+        return Lesson(
+          id: lesson.id,
+          studentId: lesson.studentId,
+          startTime: newStartTime,
+          endTime: newEndTime,
+          isPaid: lesson.isPaid, // Preserve original paid status
+          notes: _notesController.text,
+        );
+      }).toList();
+
+      if (updatedLessons.isNotEmpty) {
+        await database.updateLessons(updatedLessons);
+      }
+    } else if (_duplicateLessons &&
         _duplicationStartDate != null &&
         _duplicationEndDate != null) {
       // Duplication logic for both new and edited lessons
@@ -318,6 +358,9 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                     onChanged: (bool? value) {
                       setState(() {
                         _duplicateLessons = value ?? false;
+                        if (_duplicateLessons) {
+                          _applyToFutureLessons = false;
+                        }
                       });
                       _validateForm();
                     },
@@ -361,6 +404,37 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                 ],
               ),
             ),
+            if (widget.lessonToEdit != null) ...[
+              _buildSectionTitle('Массовое редактирование'),
+              Card(
+                color: Colors.white,
+                margin: const EdgeInsets.symmetric(vertical: 4.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0),
+                ),
+                child: Column(
+                  children: [
+                    CheckboxListTile(
+                      title: const Text(
+                        'Применить к этому и всем последующим занятиям',
+                      ),
+                      value: _applyToFutureLessons,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _applyToFutureLessons = value ?? false;
+                          if (_applyToFutureLessons) {
+                            _duplicateLessons = false;
+                          }
+                        });
+                        _validateForm();
+                      },
+                      controlAffinity: ListTileControlAffinity.leading,
+                      activeColor: Colors.deepPurple,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),

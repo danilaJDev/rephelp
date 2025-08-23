@@ -579,17 +579,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         viewLessons[day] = lessons;
       }
     });
-
-    // final viewLessons = <DateTime, List<Map<String, dynamic>>>{};
-    // final firstDay = daysToDisplay.first;
-    // final lastDay = daysToDisplay.last;
-    // _allLessons.forEach((day, lessons) {
-    //   final dayOnly = DateTime(day.year, day.month, day.day);
-    //   if (!dayOnly.isBefore(firstDay) && !dayOnly.isAfter(lastDay)) {
-    //     viewLessons[dayOnly] = lessons;
-    //   }
-    // });
-
+    
     return Column(
       children: [
         _buildTableNavigator(),

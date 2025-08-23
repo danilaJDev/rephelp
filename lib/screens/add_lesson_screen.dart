@@ -96,7 +96,6 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         originalLesson.studentId,
         originalLesson.startTime,
       );
-
       final dayDifference =
           _lessonDate.weekday - originalLesson.startTime.weekday;
 

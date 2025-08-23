@@ -108,7 +108,28 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Расписание'),
+      appBar: CustomAppBar(
+        title: 'Расписание',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline, color: Colors.white, size: 28),
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddLessonScreen(
+                    students: _students,
+                    selectedDate: _selectedDay ?? DateTime.now(),
+                  ),
+                ),
+              );
+              if (result == true) {
+                await _loadAllData();
+              }
+            },
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Container(
@@ -149,24 +170,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddLessonScreen(
-                students: _students,
-                selectedDate: _selectedDay!,
-              ),
-            ),
-          );
-          if (result == true) {
-            await _loadAllData();
-          }
-        },
-        backgroundColor: Colors.deepPurple,
-        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

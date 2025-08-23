@@ -28,11 +28,18 @@ class _FinanceScreenState extends State<FinanceScreen> {
       _isLoading = true;
     });
 
-    final data = await _database.getFinancialData();
+    final allLessons = await _database.getFinancialData();
+    final now = DateTime.now();
+
+    final pastLessons = allLessons.where((lesson) {
+      final endTime = DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
+      return endTime.isBefore(now);
+    }).toList();
+
     double total = 0.0;
     double unpaid = 0.0;
 
-    for (var lesson in data) {
+    for (var lesson in pastLessons) {
       final price = (lesson['price'] as num).toDouble();
       final isPaid = lesson['is_paid'] == 1;
       total += price;
@@ -43,7 +50,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
 
     if (!mounted) return;
     setState(() {
-      _financialData = data;
+      _financialData = pastLessons;
       _totalEarned = total;
       _unpaidAmount = unpaid;
       _isLoading = false;
@@ -142,26 +149,36 @@ class _FinanceScreenState extends State<FinanceScreen> {
       itemCount: _financialData.length,
       itemBuilder: (context, index) {
         final lesson = _financialData[index];
-        final date = DateTime.fromMillisecondsSinceEpoch(lesson['start_time']);
+        final startTime =
+            DateTime.fromMillisecondsSinceEpoch(lesson['start_time']);
+        final endTime = DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
         final isPaid = lesson['is_paid'] == 1;
+        final studentName =
+            '${lesson['name']} ${lesson['surname'] ?? ''}';
+        final lessonDate = DateFormat.yMMMd('ru').format(startTime);
+        final lessonTime =
+            '${DateFormat.Hm('ru').format(startTime)} - ${DateFormat.Hm('ru').format(endTime)}';
 
         return Card(
-          child: ListTile(
-            onTap: () => _toggleLessonPaidStatus(lesson['id'] as int, isPaid),
-            leading: Icon(
-              isPaid ? Icons.check_circle : Icons.cancel,
-              color: isPaid ? Colors.green : Colors.red,
-              size: 30,
-            ),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: CheckboxListTile(
+            value: isPaid,
+            onChanged: (bool? value) {
+              if (value != null) {
+                _toggleLessonPaidStatus(lesson['id'] as int, isPaid);
+              }
+            },
             title: Text(
-              lesson['name'] as String,
+              studentName,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            subtitle: Text(DateFormat.yMMMd('ru').format(date)),
-            trailing: Text(
+            subtitle: Text('$lessonDate\n$lessonTime'),
+            secondary: Text(
               '${(lesson['price'] as num).toStringAsFixed(0)} руб.',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
+            controlAffinity: ListTileControlAffinity.leading,
+            activeColor: Colors.green,
           ),
         );
       },

@@ -99,6 +99,29 @@ class _StudentsScreenState extends State<StudentsScreen>
           padding: EdgeInsets.only(left: 10),
           child: Text('Ученики', style: TextStyle(fontSize: 24)),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              icon: const Icon(
+                Icons.add_circle_outline,
+                color: Colors.white,
+                size: 30,
+              ),
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddStudentScreen(),
+                  ),
+                );
+                if (result == true) {
+                  _loadStudents();
+                }
+              },
+            ),
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

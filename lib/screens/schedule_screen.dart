@@ -69,6 +69,22 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     });
   }
 
+  Future<void> _editLesson(Lesson lesson) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddLessonScreen(
+          students: _students,
+          selectedDate: lesson.startTime,
+          lessonToEdit: lesson,
+        ),
+      ),
+    );
+    if (result == true) {
+      await _loadAllData();
+    }
+  }
+
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
     if (!isSameDay(_selectedDay, selectedDay)) {
       setState(() {
@@ -239,18 +255,53 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: ListTile(
-        title: Text('$startTime - $endTime'),
+        onTap: () => _editLesson(lesson),
+        title: Text(
+          '$startTime - $endTime',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.deepPurple,
+          ),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(studentName),
+            Text(
+              studentName,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
             if (hasNotes) ...[
-              const SizedBox(height: 4),
-              Text(
-                lesson.notes!,
-                style: TextStyle(color: Colors.grey[600]),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              const SizedBox(height: 6),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 2),
+                    child: Icon(
+                      Icons.sticky_note_2_outlined,
+                      size: 18,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      lesson.notes!,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             ],
           ],
@@ -286,21 +337,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               ListTile(
                 leading: const Icon(Icons.edit, color: Colors.blue),
                 title: const Text('Редактировать'),
-                onTap: () async {
+                onTap: () {
                   Navigator.of(context).pop();
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AddLessonScreen(
-                        students: _students,
-                        selectedDate: lesson.startTime,
-                        lessonToEdit: lesson,
-                      ),
-                    ),
-                  );
-                  if (result == true) {
-                    await _loadAllData();
-                  }
+                  _editLesson(lesson);
                 },
               ),
               ListTile(

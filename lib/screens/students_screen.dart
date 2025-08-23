@@ -94,7 +94,12 @@ class _StudentsScreenState extends State<StudentsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Ученики'),
+      appBar: CustomAppBar(
+        title: const Padding(
+          padding: EdgeInsets.only(left: 10),
+          child: Text('Ученики', style: TextStyle(fontSize: 24)),
+        ),
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(

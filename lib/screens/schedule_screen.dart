@@ -109,24 +109,34 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Расписание',
+        title: const Padding(
+          padding: EdgeInsets.only(left: 10),
+          child: Text('Расписание', style: TextStyle(fontSize: 24)),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: Colors.white, size: 28),
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AddLessonScreen(
-                    students: _students,
-                    selectedDate: _selectedDay ?? DateTime.now(),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              icon: const Icon(
+                Icons.add_circle_outline,
+                color: Colors.white,
+                size: 30,
+              ),
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddLessonScreen(
+                      students: _students,
+                      selectedDate: _selectedDay ?? DateTime.now(),
+                    ),
                   ),
-                ),
-              );
-              if (result == true) {
-                await _loadAllData();
-              }
-            },
+                );
+                if (result == true) {
+                  await _loadAllData();
+                }
+              },
+            ),
           ),
         ],
       ),
@@ -186,8 +196,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       itemBuilder: (context, index) {
         final day = sortedDays[index];
         final lessons = _allLessons[day]!;
-        lessons.sort((a, b) =>
-            (a['lesson'] as Lesson).startTime.compareTo((b['lesson'] as Lesson).startTime));
+        lessons.sort(
+          (a, b) => (a['lesson'] as Lesson).startTime.compareTo(
+            (b['lesson'] as Lesson).startTime,
+          ),
+        );
         final formattedDate = DateFormat(
           'dd.MM.yyyy, EEEE',
           'ru_RU',
@@ -407,8 +420,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       return lessonTime.hour == time.hour;
     }).toList();
 
-    lessonsInSlot.sort((a, b) =>
-        (a['lesson'] as Lesson).startTime.compareTo((b['lesson'] as Lesson).startTime));
+    lessonsInSlot.sort(
+      (a, b) => (a['lesson'] as Lesson).startTime.compareTo(
+        (b['lesson'] as Lesson).startTime,
+      ),
+    );
 
     return lessonsInSlot;
   }

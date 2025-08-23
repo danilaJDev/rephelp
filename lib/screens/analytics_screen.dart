@@ -48,7 +48,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Аналитика'),
+      appBar: CustomAppBar(
+        title: const Padding(
+          padding: EdgeInsets.only(left: 10),
+          child: Text('Аналитика', style: TextStyle(fontSize: 24)),
+        ),
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(

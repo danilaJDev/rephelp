@@ -172,7 +172,10 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: widget.student == null ? 'Новый ученик' : 'Редактировать',
+        title: Text(
+          widget.student == null ? 'Добавить ученика' : 'Редактировать ученика',
+          style: const TextStyle(fontSize: 20),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),

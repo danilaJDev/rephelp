@@ -95,21 +95,10 @@ class _StudentsScreenState extends State<StudentsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Ученики',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: Colors.white, size: 28),
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddStudentScreen()),
-              );
-              if (result == true) {
-                _loadStudents();
-              }
-            },
-          ),
-        ],
+        title: const Padding(
+          padding: EdgeInsets.only(left: 10),
+          child: Text('Ученики', style: TextStyle(fontSize: 24)),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

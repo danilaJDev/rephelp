@@ -96,8 +96,8 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         originalLesson.studentId,
         originalLesson.startTime,
       );
-
-      final dayDifference = _lessonDate.weekday - originalLesson.startTime.weekday;
+      final dayDifference =
+          _lessonDate.weekday - originalLesson.startTime.weekday;
 
       final updatedLessons = lessonsToUpdate.map((lesson) {
         final newDate = lesson.startTime.add(Duration(days: dayDifference));
@@ -162,7 +162,6 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         currentDate = currentDate.add(const Duration(days: 1));
       }
 
-      // If editing, delete the original lesson to avoid a duplicate entry
       if (widget.lessonToEdit != null) {
         await database.deleteLesson(widget.lessonToEdit!.id!);
       }
@@ -171,7 +170,6 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         await database.insertLessons(lessonsToSave);
       }
     } else {
-      // Logic for a single lesson (update or insert)
       final lessonStartTime = DateTime(
         _lessonDate.year,
         _lessonDate.month,
@@ -179,6 +177,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         _startTime!.hour,
         _startTime!.minute,
       );
+
       final lessonEndTime = DateTime(
         _lessonDate.year,
         _lessonDate.month,
@@ -217,9 +216,12 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: widget.lessonToEdit != null
-            ? 'Редактировать занятие'
-            : 'Добавить занятие',
+        title: Text(
+          widget.lessonToEdit != null
+              ? 'Редактировать занятие'
+              : 'Добавить занятие',
+          style: const TextStyle(fontSize: 20),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -514,7 +516,6 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
       setState(() {
         if (isStart) {
           _duplicationStartDate = picked;
-          // Если дата окончания была раньше новой даты начала, сбрасываем ее
           if (_duplicationEndDate != null &&
               _duplicationEndDate!.isBefore(picked)) {
             _duplicationEndDate = null;

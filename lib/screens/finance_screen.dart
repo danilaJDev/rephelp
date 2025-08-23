@@ -58,7 +58,12 @@ class _FinanceScreenState extends State<FinanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Финансы'),
+      appBar: CustomAppBar(
+        title: const Padding(
+          padding: EdgeInsets.only(left: 10),
+          child: Text('Финансы', style: TextStyle(fontSize: 24)),
+        ),
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -142,10 +147,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
 
         return Card(
           child: ListTile(
-            onTap: () => _toggleLessonPaidStatus(
-              lesson['id'] as int,
-              isPaid,
-            ),
+            onTap: () => _toggleLessonPaidStatus(lesson['id'] as int, isPaid),
             leading: Icon(
               isPaid ? Icons.check_circle : Icons.cancel,
               color: isPaid ? Colors.green : Colors.red,

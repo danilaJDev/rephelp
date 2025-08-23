@@ -23,7 +23,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   List<Map<String, dynamic>> _lessons = [];
   List<Student> _students = [];
   Map<DateTime, List<Map<String, dynamic>>> _allLessons = {};
-  final Set<DateTime> _hiddenDots = {};
   DateTime _focusedDateForTable = DateTime.now();
 
   @override
@@ -93,13 +92,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         _focusedDay = focusedDay;
       });
       _loadLessonsForDay(selectedDay);
-    }
-
-    final dayKey = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
-    if (_allLessons.containsKey(dayKey)) {
-      setState(() {
-        _hiddenDots.add(dayKey);
-      });
     }
   }
 
@@ -685,34 +677,41 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               color: Colors.deepPurple,
               shape: BoxShape.circle,
             ),
-            markerManagedByCalendar: false,
           ),
+
+          eventLoader: (day) {
+            final key = DateTime(day.year, day.month, day.day);
+            return _allLessons[key] ?? [];
+          },
+
           calendarBuilders: CalendarBuilders(
-            markerBuilder: (context, date, events) {
-              final dayKey = DateTime(date.year, date.month, date.day);
-              if (events.isNotEmpty && !_hiddenDots.contains(dayKey)) {
-                final today = DateTime.now();
-                final todayDate = DateTime(today.year, today.month, today.day);
-                final isPast = date.isBefore(todayDate);
-                return Positioned(
-                  right: 1,
-                  bottom: 1,
-                  child: Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      color: isPast ? Colors.grey[800] : Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                );
+            markerBuilder: (context, day, events) {
+              if (events.isEmpty) return const SizedBox();
+
+              if (isSameDay(day, _selectedDay)) {
+                return const SizedBox();
               }
-              return null;
+
+              final now = DateTime.now();
+              final today = DateTime(now.year, now.month, now.day);
+              final currentDay = DateTime(day.year, day.month, day.day);
+
+              final isPast = currentDay.isBefore(today);
+              final dotColor = isPast ? Colors.black87 : Colors.red;
+
+              return Positioned(
+                bottom: 4,
+                child: Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: dotColor,
+                  ),
+                ),
+              );
             },
           ),
-          eventLoader: (day) {
-            return _allLessons[DateTime(day.year, day.month, day.day)] ?? [];
-          },
         ),
         const Divider(),
         Expanded(

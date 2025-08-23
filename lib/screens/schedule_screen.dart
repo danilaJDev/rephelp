@@ -183,6 +183,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       itemBuilder: (context, index) {
         final day = sortedDays[index];
         final lessons = _allLessons[day]!;
+        lessons.sort((a, b) =>
+            (a['lesson'] as Lesson).startTime.compareTo((b['lesson'] as Lesson).startTime));
         final formattedDate = DateFormat(
           'dd.MM.yyyy, EEEE',
           'ru_RU',
@@ -396,11 +398,16 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       return [];
     }
     final lessonsForDay = weekLessons[dayKey]!;
-    return lessonsForDay.where((lessonData) {
+    final lessonsInSlot = lessonsForDay.where((lessonData) {
       final lesson = lessonData['lesson'] as Lesson;
       final lessonTime = TimeOfDay.fromDateTime(lesson.startTime);
       return lessonTime.hour == time.hour;
     }).toList();
+
+    lessonsInSlot.sort((a, b) =>
+        (a['lesson'] as Lesson).startTime.compareTo((b['lesson'] as Lesson).startTime));
+
+    return lessonsInSlot;
   }
 
   TableRow _buildTimeSlotRow(

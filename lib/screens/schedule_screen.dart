@@ -489,7 +489,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   data: lesson,
                   feedback: Opacity(opacity: 0.7, child: lessonWidget),
                   childWhenDragging: Opacity(opacity: 0.3, child: lessonWidget),
-                  child: lessonWidget,
+                  child: GestureDetector(
+                    onTap: () => _showLessonMenu(context, lesson, student),
+                    child: lessonWidget,
+                  ),
                 );
               }).toList(),
             ),

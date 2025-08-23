@@ -88,38 +88,12 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
     }
 
     final database = AppDatabase();
-    final lessonsToSave = <Lesson>[];
 
-    final lessonStartTime = DateTime(
-      _lessonDate.year,
-      _lessonDate.month,
-      _lessonDate.day,
-      _startTime!.hour,
-      _startTime!.minute,
-    );
-    final lessonEndTime = DateTime(
-      _lessonDate.year,
-      _lessonDate.month,
-      _lessonDate.day,
-      _endTime!.hour,
-      _endTime!.minute,
-    );
-
-    // If we are just editing, we ignore the duplication logic.
-    if (widget.lessonToEdit != null) {
-      final lessonToUpdate = Lesson(
-        id: widget.lessonToEdit!.id,
-        studentId: student.id!,
-        startTime: lessonStartTime,
-        endTime: lessonEndTime,
-        isPaid: widget.lessonToEdit!.isPaid,
-        notes: _notesController.text,
-      );
-      await database.updateLesson(lessonToUpdate);
-    } else if (_duplicateLessons &&
+    if (_duplicateLessons &&
         _duplicationStartDate != null &&
         _duplicationEndDate != null) {
-      // Duplication logic
+      // Duplication logic for both new and edited lessons
+      final lessonsToSave = <Lesson>[];
       var currentDate = _duplicationStartDate!;
       while (currentDate.isBefore(_duplicationEndDate!) ||
           currentDate.isAtSameMomentAs(_duplicationEndDate!)) {
@@ -147,20 +121,51 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         }
         currentDate = currentDate.add(const Duration(days: 1));
       }
+
+      // If editing, delete the original lesson to avoid a duplicate entry
+      if (widget.lessonToEdit != null) {
+        await database.deleteLesson(widget.lessonToEdit!.id!);
+      }
+
       if (lessonsToSave.isNotEmpty) {
         await database.insertLessons(lessonsToSave);
       }
     } else {
-      // Single lesson logic
-      lessonsToSave.add(
-        Lesson(
+      // Logic for a single lesson (update or insert)
+      final lessonStartTime = DateTime(
+        _lessonDate.year,
+        _lessonDate.month,
+        _lessonDate.day,
+        _startTime!.hour,
+        _startTime!.minute,
+      );
+      final lessonEndTime = DateTime(
+        _lessonDate.year,
+        _lessonDate.month,
+        _lessonDate.day,
+        _endTime!.hour,
+        _endTime!.minute,
+      );
+
+      if (widget.lessonToEdit != null) {
+        final lessonToUpdate = Lesson(
+          id: widget.lessonToEdit!.id,
+          studentId: student.id!,
+          startTime: lessonStartTime,
+          endTime: lessonEndTime,
+          isPaid: widget.lessonToEdit!.isPaid,
+          notes: _notesController.text,
+        );
+        await database.updateLesson(lessonToUpdate);
+      } else {
+        final newLesson = Lesson(
           studentId: student.id!,
           startTime: lessonStartTime,
           endTime: lessonEndTime,
           notes: _notesController.text,
-        ),
-      );
-      await database.insertLessons(lessonsToSave);
+        );
+        await database.insertLesson(newLesson);
+      }
     }
 
     if (mounted) {

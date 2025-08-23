@@ -23,6 +23,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   List<Map<String, dynamic>> _lessons = [];
   List<Student> _students = [];
   Map<DateTime, List<Map<String, dynamic>>> _allLessons = {};
+  final Set<DateTime> _hiddenDots = {};
   DateTime _focusedDateForTable = DateTime.now();
 
   @override
@@ -92,6 +93,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         _focusedDay = focusedDay;
       });
       _loadLessonsForDay(selectedDay);
+    }
+
+    final dayKey = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    if (_allLessons.containsKey(dayKey)) {
+      setState(() {
+        _hiddenDots.add(dayKey);
+      });
     }
   }
 
@@ -677,6 +685,30 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               color: Colors.deepPurple,
               shape: BoxShape.circle,
             ),
+            markerManagedByCalendar: false,
+          ),
+          calendarBuilders: CalendarBuilders(
+            markerBuilder: (context, date, events) {
+              final dayKey = DateTime(date.year, date.month, date.day);
+              if (events.isNotEmpty && !_hiddenDots.contains(dayKey)) {
+                final today = DateTime.now();
+                final todayDate = DateTime(today.year, today.month, today.day);
+                final isPast = date.isBefore(todayDate);
+                return Positioned(
+                  right: 1,
+                  bottom: 1,
+                  child: Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: isPast ? Colors.grey[800] : Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                );
+              }
+              return null;
+            },
           ),
           eventLoader: (day) {
             return _allLessons[DateTime(day.year, day.month, day.day)] ?? [];

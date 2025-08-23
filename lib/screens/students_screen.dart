@@ -94,7 +94,23 @@ class _StudentsScreenState extends State<StudentsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Ученики'),
+      appBar: CustomAppBar(
+        title: 'Ученики',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline, color: Colors.white, size: 28),
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddStudentScreen()),
+              );
+              if (result == true) {
+                _loadStudents();
+              }
+            },
+          ),
+        ],
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -168,19 +184,6 @@ class _StudentsScreenState extends State<StudentsScreen>
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddStudentScreen()),
-          );
-          if (result == true) {
-            _loadStudents();
-          }
-        },
-        backgroundColor: Colors.deepPurple,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
     );
   }
 

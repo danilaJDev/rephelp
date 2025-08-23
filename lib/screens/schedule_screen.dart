@@ -108,7 +108,28 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Расписание'),
+      appBar: CustomAppBar(
+        title: 'Расписание',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline, color: Colors.white, size: 28),
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddLessonScreen(
+                    students: _students,
+                    selectedDate: _selectedDay ?? DateTime.now(),
+                  ),
+                ),
+              );
+              if (result == true) {
+                await _loadAllData();
+              }
+            },
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Container(
@@ -150,24 +171,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddLessonScreen(
-                students: _students,
-                selectedDate: _selectedDay!,
-              ),
-            ),
-          );
-          if (result == true) {
-            await _loadAllData();
-          }
-        },
-        backgroundColor: Colors.deepPurple,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
     );
   }
 
@@ -183,6 +186,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       itemBuilder: (context, index) {
         final day = sortedDays[index];
         final lessons = _allLessons[day]!;
+        lessons.sort((a, b) =>
+            (a['lesson'] as Lesson).startTime.compareTo((b['lesson'] as Lesson).startTime));
         final formattedDate = DateFormat(
           'dd.MM.yyyy, EEEE',
           'ru_RU',
@@ -396,11 +401,16 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       return [];
     }
     final lessonsForDay = weekLessons[dayKey]!;
-    return lessonsForDay.where((lessonData) {
+    final lessonsInSlot = lessonsForDay.where((lessonData) {
       final lesson = lessonData['lesson'] as Lesson;
       final lessonTime = TimeOfDay.fromDateTime(lesson.startTime);
       return lessonTime.hour == time.hour;
     }).toList();
+
+    lessonsInSlot.sort((a, b) =>
+        (a['lesson'] as Lesson).startTime.compareTo((b['lesson'] as Lesson).startTime));
+
+    return lessonsInSlot;
   }
 
   TableRow _buildTimeSlotRow(
@@ -482,7 +492,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   data: lesson,
                   feedback: Opacity(opacity: 0.7, child: lessonWidget),
                   childWhenDragging: Opacity(opacity: 0.3, child: lessonWidget),
-                  child: lessonWidget,
+                  child: GestureDetector(
+                    onTap: () => _showLessonMenu(context, lesson, student),
+                    child: lessonWidget,
+                  ),
                 );
               }).toList(),
             ),

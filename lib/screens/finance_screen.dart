@@ -23,7 +23,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
     _loadFinancialData();
   }
 
-  Future<void> _loadFinancialData() async {
+  Future<void> _loadFinancialData({bool reapplyAutoPay = true}) async {
     setState(() {
       _isLoading = true;
     });
@@ -32,14 +32,17 @@ class _FinanceScreenState extends State<FinanceScreen> {
     final now = DateTime.now();
     bool updated = false;
 
-    for (final lesson in allLessons) {
-      final endTime = DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
-      final isPaid = lesson['is_paid'] == 1;
-      final autoPay = lesson['autoPay'] == 1;
+    if (reapplyAutoPay) {
+      for (final lesson in allLessons) {
+        final endTime =
+            DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
+        final isPaid = lesson['is_paid'] == 1;
+        final autoPay = lesson['autoPay'] == 1;
 
-      if (autoPay && !isPaid && endTime.isBefore(now)) {
-        await _database.updateLessonIsPaid(lesson['id'] as int, true);
-        updated = true;
+        if (autoPay && !isPaid && endTime.isBefore(now)) {
+          await _database.updateLessonIsPaid(lesson['id'] as int, true);
+          updated = true;
+        }
       }
     }
 
@@ -75,7 +78,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
 
   Future<void> _toggleLessonPaidStatus(int lessonId, bool isPaid) async {
     await _database.updateLessonIsPaid(lessonId, !isPaid);
-    await _loadFinancialData();
+    await _loadFinancialData(reapplyAutoPay: false);
   }
 
   @override

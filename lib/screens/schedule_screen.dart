@@ -579,7 +579,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         viewLessons[day] = lessons;
       }
     });
-    
+
     return Column(
       children: [
         _buildTableNavigator(),

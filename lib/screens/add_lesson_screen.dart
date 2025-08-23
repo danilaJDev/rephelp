@@ -121,7 +121,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
           studentId: lesson.studentId,
           startTime: newStartTime,
           endTime: newEndTime,
-          isPaid: lesson.isPaid, // Preserve original paid status
+          isPaid: lesson.isPaid,
           notes: _notesController.text,
         );
       }).toList();
@@ -132,7 +132,6 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
     } else if (_duplicateLessons &&
         _duplicationStartDate != null &&
         _duplicationEndDate != null) {
-      // Duplication logic for both new and edited lessons
       final lessonsToSave = <Lesson>[];
       var currentDate = _duplicationStartDate!;
       while (currentDate.isBefore(_duplicationEndDate!) ||
@@ -290,6 +289,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                 ],
               ),
             ),
+
             _buildSectionTitle('Ученик'),
             Card(
               color: Colors.white,
@@ -328,25 +328,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                 ),
               ),
             ),
-            _buildSectionTitle('Примечания'),
-            Card(
-              color: Colors.white,
-              margin: const EdgeInsets.symmetric(vertical: 4.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextFormField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(
-                    hintText: 'Добавьте примечание к занятию...',
-                    border: InputBorder.none,
-                  ),
-                  maxLines: 3,
-                ),
-              ),
-            ),
+
             _buildSectionTitle('Дублирование'),
             Card(
               color: Colors.white,
@@ -358,7 +340,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                 children: [
                   CheckboxListTile(
                     title: const Text(
-                      'Продублировать занятия в указанный день (дни) недели',
+                      'Продублировать занятия в указанный день недели',
                     ),
                     value: _duplicateLessons,
                     onChanged: (bool? value) {
@@ -410,6 +392,27 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                 ],
               ),
             ),
+
+            _buildSectionTitle('Примечания'),
+            Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextFormField(
+                  controller: _notesController,
+                  decoration: const InputDecoration(
+                    hintText: 'Добавьте примечание к занятию...',
+                    border: InputBorder.none,
+                  ),
+                  maxLines: 3,
+                ),
+              ),
+            ),
+
             if (widget.lessonToEdit != null) ...[
               _buildSectionTitle('Массовое редактирование'),
               Card(

@@ -28,8 +28,24 @@ class _FinanceScreenState extends State<FinanceScreen> {
       _isLoading = true;
     });
 
-    final allLessons = await _database.getFinancialData();
+    var allLessons = await _database.getFinancialData();
     final now = DateTime.now();
+    bool updated = false;
+
+    for (final lesson in allLessons) {
+      final endTime = DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
+      final isPaid = lesson['is_paid'] == 1;
+      final autoPay = lesson['autoPay'] == 1;
+
+      if (autoPay && !isPaid && endTime.isBefore(now)) {
+        await _database.updateLessonIsPaid(lesson['id'] as int, true);
+        updated = true;
+      }
+    }
+
+    if (updated) {
+      allLessons = await _database.getFinancialData();
+    }
 
     final pastLessons = allLessons.where((lesson) {
       final endTime = DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);

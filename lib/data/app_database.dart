@@ -250,6 +250,43 @@ class AppDatabase {
     await db.delete('lessons', where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<void> updateLessons(List<Lesson> lessons) async {
+    final db = await database;
+    final batch = db.batch();
+    for (var lesson in lessons) {
+      batch.update(
+        'lessons',
+        lesson.toMap(),
+        where: 'id = ?',
+        whereArgs: [lesson.id],
+      );
+    }
+    await batch.commit();
+  }
+
+  Future<List<Lesson>> getFutureRecurringLessons(
+    int studentId,
+    DateTime startTime,
+  ) async {
+    final db = await database;
+    final startTimeMillis = startTime.millisecondsSinceEpoch;
+    final sqliteWeekday = (startTime.weekday % 7).toString();
+
+    final List<Map<String, dynamic>> maps = await db.rawQuery(
+      '''
+      SELECT * FROM lessons
+      WHERE student_id = ?
+      AND start_time >= ?
+      AND strftime('%w', start_time / 1000, 'unixepoch') = ?
+    ''',
+      [studentId, startTimeMillis, sqliteWeekday],
+    );
+
+    return List.generate(maps.length, (i) {
+      return Lesson.fromMap(maps[i]);
+    });
+  }
+
   Future<void> deleteFutureRecurringLessons(
     int studentId,
     DateTime startTime,

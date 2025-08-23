@@ -38,8 +38,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final now = DateTime.now();
 
     for (var lessonData in financialData) {
-      final endTime =
-          DateTime.fromMillisecondsSinceEpoch(lessonData['end_time'] as int);
+      final endTime = DateTime.fromMillisecondsSinceEpoch(
+        lessonData['end_time'] as int,
+      );
       final isPaid = (lessonData['is_paid'] as int) == 1;
       final price = (lessonData['price'] as num).toDouble();
 
@@ -89,7 +90,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     _completedLessons.toString(),
                     Icons.class_outlined,
                   ),
-                   _buildStatCard(
+                  _buildStatCard(
                     'Оплачено занятий',
                     _paidLessons.toString(),
                     Icons.payment,
@@ -100,9 +101,31 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     Icons.people_outline,
                   ),
                   _buildStatCard(
-                    'Общий доход',
-                    '${_earnedIncome.toStringAsFixed(0)} руб. (+${_expectedIncome.toStringAsFixed(0)} руб.)',
+                    'Доход',
+                    '', // Оставляем пустым, так как будем кастомный trailing
                     Icons.monetization_on_outlined,
+                    trailingWidget: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Получено: ${_earnedIncome.toStringAsFixed(0)} руб.',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          'Ожидается: ${_expectedIncome.toStringAsFixed(0)} руб.',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -110,7 +133,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon, {
+    Widget? trailingWidget,
+  }) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       child: ListTile(
@@ -124,10 +152,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           child: Icon(icon, size: 28, color: Colors.white),
         ),
         title: Text(title, style: const TextStyle(fontSize: 16)),
-        trailing: Text(
-          value,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
+        trailing:
+            trailingWidget ??
+            Text(
+              value,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
       ),
     );
   }

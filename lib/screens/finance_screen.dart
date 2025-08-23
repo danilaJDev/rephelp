@@ -160,6 +160,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
         ),
       );
     }
+
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: _financialData.length,
@@ -174,27 +175,51 @@ class _FinanceScreenState extends State<FinanceScreen> {
         final lessonDate = DateFormat.yMMMd('ru').format(startTime);
         final lessonTime =
             '${DateFormat.Hm('ru').format(startTime)} - ${DateFormat.Hm('ru').format(endTime)}';
+        final price = (lesson['price'] as num).toStringAsFixed(0);
+
+        // Цвет карточки в зависимости от статуса оплаты
+        final cardColor = isPaid ? Colors.green[50] : Colors.orange[50];
+        final statusText = isPaid ? 'Оплачено' : 'Ожидает оплаты';
+        final statusColor = isPaid ? Colors.green : Colors.orange;
 
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: CheckboxListTile(
-            value: isPaid,
-            onChanged: (bool? value) {
-              if (value != null) {
-                _toggleLessonPaidStatus(lesson['id'] as int, isPaid);
-              }
-            },
+          color: cardColor,
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
             title: Text(
               studentName,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            subtitle: Text('$lessonDate\n$lessonTime'),
-            secondary: Text(
-              '${(lesson['price'] as num).toStringAsFixed(0)} руб.',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('$lessonDate, $lessonTime'),
+                const SizedBox(height: 4),
+                Text(
+                  statusText,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: statusColor,
+                  ),
+                ),
+              ],
             ),
-            controlAffinity: ListTileControlAffinity.leading,
-            activeColor: Colors.green,
+            trailing: Text(
+              '$price руб.',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: statusColor,
+              ),
+            ),
+            onTap: () {
+              // При нажатии можно менять статус оплаты
+              _toggleLessonPaidStatus(lesson['id'] as int, isPaid);
+            },
           ),
         );
       },

@@ -196,6 +196,7 @@ class AppDatabase {
       'lessons',
       where: 'start_time BETWEEN ? AND ?',
       whereArgs: [startOfDay, endOfDay],
+      orderBy: 'start_time ASC',
     );
 
     return List.generate(maps.length, (i) {

@@ -239,6 +239,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: ListTile(
+        onTap: () => _editLesson(lesson),
         title: Text('$startTime - $endTime'),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,6 +262,22 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _editLesson(Lesson lesson) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddLessonScreen(
+          students: _students,
+          selectedDate: lesson.startTime,
+          lessonToEdit: lesson,
+        ),
+      ),
+    );
+    if (result == true) {
+      await _loadAllData();
+    }
   }
 
   void _showLessonMenu(BuildContext context, Lesson lesson, Student student) {
@@ -293,21 +310,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               ListTile(
                 leading: const Icon(Icons.edit, color: Colors.blue),
                 title: const Text('Редактировать'),
-                onTap: () async {
+                onTap: () {
                   Navigator.of(context).pop();
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AddLessonScreen(
-                        students: _students,
-                        selectedDate: lesson.startTime,
-                        lessonToEdit: lesson,
-                      ),
-                    ),
-                  );
-                  if (result == true) {
-                    await _loadAllData();
-                  }
+                  _editLesson(lesson);
                 },
               ),
               ListTile(

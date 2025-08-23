@@ -165,12 +165,12 @@ class _FinanceScreenState extends State<FinanceScreen> {
       itemCount: _financialData.length,
       itemBuilder: (context, index) {
         final lesson = _financialData[index];
-        final startTime =
-            DateTime.fromMillisecondsSinceEpoch(lesson['start_time']);
+        final startTime = DateTime.fromMillisecondsSinceEpoch(
+          lesson['start_time'],
+        );
         final endTime = DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
         final isPaid = lesson['is_paid'] == 1;
-        final studentName =
-            '${lesson['name']} ${lesson['surname'] ?? ''}';
+        final studentName = '${lesson['name']} ${lesson['surname'] ?? ''}';
         final lessonDate = DateFormat.yMMMd('ru').format(startTime);
         final lessonTime =
             '${DateFormat.Hm('ru').format(startTime)} - ${DateFormat.Hm('ru').format(endTime)}';

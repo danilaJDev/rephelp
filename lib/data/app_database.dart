@@ -222,7 +222,6 @@ class AppDatabase {
       lessons.end_time,
       lessons.is_paid,
       students.name,
-      students.surname,
       students.price
     FROM lessons
     INNER JOIN students ON lessons.student_id = students.id
@@ -329,7 +328,8 @@ class AppDatabase {
       lessons.is_paid,
       students.name,
       students.surname,
-      students.price
+      students.price,
+      students.autoPay
     FROM lessons
     INNER JOIN students ON lessons.student_id = students.id
     ORDER BY lessons.start_time DESC;

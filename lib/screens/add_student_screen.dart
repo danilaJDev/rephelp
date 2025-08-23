@@ -178,12 +178,16 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          IconButton(
-            icon: Icon(
-              Icons.check,
-              color: _isFormValid ? Colors.white : Colors.white54,
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              icon: Icon(
+                Icons.check_circle_outline,
+                color: _isFormValid ? Colors.white : Colors.white54,
+                size: 30,
+              ),
+              onPressed: _isFormValid ? _saveStudent : null,
             ),
-            onPressed: _isFormValid ? _saveStudent : null,
           ),
         ],
       ),

@@ -239,7 +239,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: ListTile(
-        onTap: () => _editLesson(lesson),
         title: Text('$startTime - $endTime'),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,22 +263,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     );
   }
 
-  Future<void> _editLesson(Lesson lesson) async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddLessonScreen(
-          students: _students,
-          selectedDate: lesson.startTime,
-          lessonToEdit: lesson,
-        ),
-      ),
-    );
-    if (result == true) {
-      await _loadAllData();
-    }
-  }
-
   void _showLessonMenu(BuildContext context, Lesson lesson, Student student) {
     showDialog(
       context: context,
@@ -301,18 +284,23 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.person_off, color: Colors.orange),
-                title: const Text('Ученик отсутствовал'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
                 leading: const Icon(Icons.edit, color: Colors.blue),
                 title: const Text('Редактировать'),
-                onTap: () {
+                onTap: () async {
                   Navigator.of(context).pop();
-                  _editLesson(lesson);
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddLessonScreen(
+                        students: _students,
+                        selectedDate: lesson.startTime,
+                        lessonToEdit: lesson,
+                      ),
+                    ),
+                  );
+                  if (result == true) {
+                    await _loadAllData();
+                  }
                 },
               ),
               ListTile(
@@ -326,13 +314,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   _showCancelOptionsDialog(lesson, student);
                 },
               ),
-              const Divider(height: 1),
               ListTile(
-                leading: const Icon(Icons.close),
+                leading: const Icon(Icons.cancel),
                 title: const Text('Закрыть'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                },
+                onTap: () => Navigator.of(context).pop(),
               ),
             ],
           ),

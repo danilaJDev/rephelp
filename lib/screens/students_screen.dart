@@ -290,7 +290,7 @@ class _StudentsScreenState extends State<StudentsScreen>
               ),
               ListTile(
                 leading: const Icon(Icons.cancel),
-                title: const Text('Отмена'),
+                title: const Text('Закрыть'),
                 onTap: () => Navigator.of(context).pop(),
               ),
             ],

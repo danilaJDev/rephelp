@@ -99,21 +99,23 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   ) {
     final Map<DateTime, List<Map<String, dynamic>>> data = {};
     for (var lesson in lessons) {
-      try {
-        final student = students.firstWhere((s) => s.id == lesson.studentId);
-        final day = DateTime(
-          lesson.startTime.year,
-          lesson.startTime.month,
-          lesson.startTime.day,
-        );
-        final lessonWithStudent = {'lesson': lesson, 'student': student};
-        if (data.containsKey(day)) {
-          data[day]!.add(lessonWithStudent);
-        } else {
-          data[day] = [lessonWithStudent];
-        }
-      } catch (e) {
-        print('Student not found for lesson ${lesson.id}');
+      final studentIndex = students.indexWhere((s) => s.id == lesson.studentId);
+      if (studentIndex == -1) {
+        continue;
+      }
+      final student = students[studentIndex];
+
+      final day = DateTime(
+        lesson.startTime.year,
+        lesson.startTime.month,
+        lesson.startTime.day,
+      );
+      final lessonWithStudent = {'lesson': lesson, 'student': student};
+
+      if (data.containsKey(day)) {
+        data[day]!.add(lessonWithStudent);
+      } else {
+        data[day] = [lessonWithStudent];
       }
     }
     return data;

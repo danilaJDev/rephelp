@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:rephelp/data/app_database.dart';
 
 class IncomeStatisticsScreen extends StatefulWidget {
-  const IncomeStatisticsScreen({super.key});
+  const IncomeStatisticsScreen({Key? key}) : super(key: key);
 
   @override
   State<IncomeStatisticsScreen> createState() => _IncomeStatisticsScreenState();
@@ -14,18 +13,21 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
   final AppDatabase _database = AppDatabase();
   List<Map<String, dynamic>> _incomeData = [];
   bool _isLoading = true;
-  String _selectedFilter = 'Квартал';
+
+  String _selectedFilter = 'Доходы за 3 месяца';
+  bool _panelOpen = false;
+  double _prevTotal = 0;
 
   final Map<String, DateTimeRange> _dateFilters = {
-    'Квартал': DateTimeRange(
+    'Доходы за 3 месяца': DateTimeRange(
       start: DateTime(DateTime.now().year, DateTime.now().month - 2, 1),
       end: DateTime.now(),
     ),
-    'Полгода': DateTimeRange(
+    'Доходы за 6 месяцев': DateTimeRange(
       start: DateTime(DateTime.now().year, DateTime.now().month - 5, 1),
       end: DateTime.now(),
     ),
-    'Год': DateTimeRange(
+    'Доходы за 12 месяцев': DateTimeRange(
       start: DateTime(DateTime.now().year, DateTime.now().month - 11, 1),
       end: DateTime.now(),
     ),
@@ -37,254 +39,263 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
     _loadIncomeData(_dateFilters[_selectedFilter]!);
   }
 
-  Future<void> _loadIncomeData(DateTimeRange dateRange) async {
+  Future<void> _loadIncomeData(DateTimeRange range) async {
     setState(() => _isLoading = true);
-
     final data = await _database.getFinancialDataByDateRange(
-      dateRange.start,
-      dateRange.end,
+      range.start,
+      range.end,
     );
+    if (!mounted) return;
 
-    if (mounted) {
-      setState(() {
-        _incomeData = data;
-        _isLoading = false;
-      });
-    }
+    final monthly = _groupByMonth(range);
+    final total = monthly.values.fold(0.0, (a, b) => a + b);
+    _prevTotal = _prevTotal == 0 ? total : _prevTotal;
+
+    setState(() {
+      _incomeData = data;
+      _isLoading = false;
+    });
   }
 
-  Map<String, double> _groupDataByMonthWithAll(DateTimeRange range) {
-    final Map<String, double> monthlyTotals = {};
-    DateTime current = DateTime(range.start.year, range.start.month);
+  Map<String, double> _groupByMonth(DateTimeRange range) {
+    final Map<String, double> result = {};
+    var cursor = DateTime(range.start.year, range.start.month);
     final end = DateTime(range.end.year, range.end.month);
 
-    while (!current.isAfter(end)) {
-      final monthKey = DateFormat.MMM('ru').format(current).toUpperCase();
-      monthlyTotals[monthKey] = 0.0;
-      current = DateTime(current.year, current.month + 1);
+    while (!cursor.isAfter(end)) {
+      final label = DateFormat.MMM('ru').format(cursor).toUpperCase();
+      result[label] = 0;
+      cursor = DateTime(cursor.year, cursor.month + 1);
     }
 
-    for (var item in _incomeData) {
-      final date = DateTime.fromMillisecondsSinceEpoch(item['start_time']);
-      final monthKey = DateFormat.MMM('ru').format(date).toUpperCase();
-      final price = (item['price'] as num).toDouble();
-      if (monthlyTotals.containsKey(monthKey)) {
-        monthlyTotals[monthKey] = monthlyTotals[monthKey]! + price;
-      }
+    for (var row in _incomeData) {
+      final dt = DateTime.fromMillisecondsSinceEpoch(row['start_time']);
+      final key = DateFormat.MMM('ru').format(dt).toUpperCase();
+      final price = (row['price'] as num).toDouble();
+      if (result.containsKey(key)) result[key] = result[key]! + price;
     }
 
-    return monthlyTotals;
+    return result;
   }
 
   @override
   Widget build(BuildContext context) {
+    final range = _dateFilters[_selectedFilter]!;
+    final monthly = _groupByMonth(range);
+    final total = monthly.values.fold(0.0, (a, b) => a + b);
+    final maxMonth = monthly.values.fold<double>(
+      0.0,
+      (mx, v) => v > mx ? v : mx,
+    );
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+          : Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
               child: Column(
-                children: [_buildFilterDropdown(), _buildChartCard()],
-              ),
-            ),
-    );
-  }
+                children: [
+                  _buildFilterPanel(),
+                  const SizedBox(height: 20),
 
-  Widget _buildFilterDropdown() {
-    return Padding(
-      padding: const EdgeInsets.all(12.0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButtonFormField<String>(
-            value: _selectedFilter,
-            isExpanded: true,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              prefixIcon: Icon(
-                Icons.calendar_today_outlined,
-                color: Colors.black54,
-              ),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 14,
-              ),
-            ),
-            dropdownColor: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            items: _dateFilters.keys.map((filter) {
-              return DropdownMenuItem(
-                value: filter,
-                child: Row(
-                  children: [
-                    const Icon(Icons.date_range, color: Colors.black54),
-                    const SizedBox(width: 12),
-                    Text(filter),
-                  ],
-                ),
-              );
-            }).toList(),
-            onChanged: (value) {
-              if (value != null) {
-                setState(() => _selectedFilter = value);
-                _loadIncomeData(_dateFilters[value]!);
-              }
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChartCard() {
-    final monthlyData = _groupDataByMonthWithAll(
-      _dateFilters[_selectedFilter]!,
-    );
-    final total = _incomeData.fold<double>(
-      0.0,
-      (sum, item) => sum + (item['price'] as num),
-    );
-    final maxValue = monthlyData.values.fold(
-      0.0,
-      (max, v) => v > max ? v : max,
-    );
-
-    return Padding(
-      padding: const EdgeInsets.all(12.0),
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 2,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Доход",
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "${total.toStringAsFixed(0)} ₽",
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 250,
-                child: BarChart(
-                  BarChartData(
-                    maxY: maxValue > 0 ? maxValue * 1.2 : 1,
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: false,
-                      getDrawingHorizontalLine: (value) {
-                        return FlLine(
-                          color: Colors.grey.shade300,
-                          strokeWidth: 1,
-                          dashArray: [5, 5],
-                        );
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: _prevTotal, end: total),
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeInOut,
+                      builder: (context, value, child) {
+                        return _buildSummaryCard(value);
                       },
+                      onEnd: () => _prevTotal = total,
                     ),
-                    borderData: FlBorderData(show: false),
-                    titlesData: FlTitlesData(
-                      leftTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      switchInCurve: Curves.easeInOut,
+                      switchOutCurve: Curves.easeInOut,
+                      child: Padding(
+                        key: ValueKey(_selectedFilter),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: _buildMonthlyList(monthly, maxMonth),
                       ),
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            final index = value.toInt();
-                            if (index >= 0 && index < monthlyData.keys.length) {
-                              return SideTitleWidget(
-                                space: 6,
-                                meta: meta,
-                                child: Text(
-                                  monthlyData.keys.elementAt(index),
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildFilterPanel() {
+    final current = _selectedFilter;
+    final others = _dateFilters.keys.where((k) => k != current).toList();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: Column(
+        children: [
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 1,
+            child: ExpansionTile(
+              key: ValueKey(current),
+              leading: Icon(Icons.date_range, color: Colors.deepPurple),
+              title: Text(
+                current,
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              initiallyExpanded: _panelOpen,
+              onExpansionChanged: (open) => setState(() => _panelOpen = open),
+              children: [
+                ...others.map((label) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () {
+                        setState(() {
+                          _selectedFilter = label;
+                          _panelOpen = false;
+                        });
+                        _loadIncomeData(_dateFilters[label]!);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: Offset(2, 5),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 12,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.date_range, color: Colors.grey),
+                            const SizedBox(width: 12),
+                            Text(
+                              label,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    barGroups: monthlyData.entries.map((entry) {
-                      final index = monthlyData.keys.toList().indexOf(
-                        entry.key,
-                      );
-                      final isEmpty = entry.value == 0;
-
-                      return BarChartGroupData(
-                        x: index,
-                        barRods: [
-                          BarChartRodData(
-                            toY: entry.value,
-                            color: isEmpty
-                                ? Colors.grey.shade300
-                                : Colors.blue.shade700,
-                            width: 36,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ],
-                        showingTooltipIndicators: entry.value > 0 ? [0] : [],
-                      );
-                    }).toList(),
-                    barTouchData: BarTouchData(
-                      enabled: true,
-                      touchTooltipData: BarTouchTooltipData(
-                        getTooltipColor: (_) => Colors.transparent,
-                        tooltipPadding: const EdgeInsets.all(0),
-                        tooltipMargin: -100,
-                        getTooltipItem:
-                            (
-                              BarChartGroupData group,
-                              int groupIndex,
-                              BarChartRodData rod,
-                              int rodIndex,
-                            ) {
-                              final amount = rod.toY.toStringAsFixed(0);
-                              final verticalAmount = amount
-                                  .split('')
-                                  .join('\n');
-                              return BarTooltipItem(
-                                verticalAmount,
-                                const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  height: 1.2,
-                                ),
-                              );
-                            },
-                      ),
-                      touchCallback: (event, response) {
-                        // Don't do anything on touch
-                      },
-                    ),
-                  ),
-                  swapAnimationDuration: const Duration(milliseconds: 250),
-                ),
-              ),
-            ],
+                  );
+                }).toList(),
+              ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(double total) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 100),
+        child: Column(
+          children: [
+            const Text(
+              'Общий доход',
+              style: TextStyle(color: Colors.black54, fontSize: 16),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '${total.toStringAsFixed(0)} руб',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple,
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMonthlyList(Map<String, double> data, double max) {
+    final months = data.keys.toList();
+    return ListView.separated(
+      itemCount: months.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, i) {
+        final label = months[i];
+        final value = data[label]!;
+        final ratio = max > 0 ? (value / max) : 0.0;
+
+        return Row(
+          children: [
+            SizedBox(
+              width: 60,
+              child: Text(label, style: const TextStyle(fontSize: 14)),
+            ),
+            const SizedBox(width: 8),
+
+            SizedBox(
+              width: 200,
+              child: Stack(
+                children: [
+                  Container(
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeInOut,
+                    height: 16,
+                    width: 200 * ratio,
+                    decoration: BoxDecoration(
+                      color: Colors.deepPurple,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            
+
+            SizedBox(
+              width: 100,
+              child: Text(
+                '${value.toStringAsFixed(0)} руб',
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -35,19 +35,37 @@ class _FinanceScreenState extends State<FinanceScreen>
           padding: EdgeInsets.only(left: 10),
           child: Text('Финансы', style: TextStyle(fontSize: 24)),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Занятия'),
-            Tab(text: 'Статистика доходов'),
-          ],
-        ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [
-          ClassesView(),
-          IncomeStatisticsScreen(),
+      body: Column(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              color: Colors.deepPurple,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(text: 'Занятия'),
+                Tab(text: 'Статистика доходов'),
+              ],
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+              indicatorColor: Colors.white,
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: const [
+                ClassesView(),
+                IncomeStatisticsScreen(),
+              ],
+            ),
+          ),
         ],
       ),
     );

@@ -185,7 +185,7 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                   final index = value.toInt();
                   if (index >= 0 && index < monthlyData.keys.length) {
                     return SideTitleWidget(
-                      axisSide: meta.axisSide,
+                      meta: meta,
                       space: 8.0,
                       child: Text(
                         monthlyData.keys.elementAt(index),

@@ -14,18 +14,18 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
   final AppDatabase _database = AppDatabase();
   List<Map<String, dynamic>> _incomeData = [];
   bool _isLoading = true;
-  String _selectedFilter = 'Доходы за 3 месяца';
+  String _selectedFilter = 'Квартал';
 
   final Map<String, DateTimeRange> _dateFilters = {
-    'Доходы за 3 месяца': DateTimeRange(
+    'Квартал': DateTimeRange(
       start: DateTime(DateTime.now().year, DateTime.now().month - 2, 1),
       end: DateTime.now(),
     ),
-    'Доходы за 6 месяцев': DateTimeRange(
+    'Полгода': DateTimeRange(
       start: DateTime(DateTime.now().year, DateTime.now().month - 5, 1),
       end: DateTime.now(),
     ),
-    'Доходы за 12 месяцев': DateTimeRange(
+    'Год': DateTimeRange(
       start: DateTime(DateTime.now().year, DateTime.now().month - 11, 1),
       end: DateTime.now(),
     ),
@@ -84,10 +84,7 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               child: Column(
-                children: [
-                  _buildFilterDropdown(),
-                  _buildChartCard(),
-                ],
+                children: [_buildFilterDropdown(), _buildChartCard()],
               ),
             ),
     );
@@ -112,15 +109,23 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                 Icons.calendar_today_outlined,
                 color: Colors.black54,
               ),
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
             ),
             dropdownColor: Colors.white,
             borderRadius: BorderRadius.circular(12),
             items: _dateFilters.keys.map((filter) {
               return DropdownMenuItem(
                 value: filter,
-                child: Text(filter),
+                child: Row(
+                  children: [
+                    const Icon(Icons.date_range, color: Colors.black54),
+                    const SizedBox(width: 12),
+                    Text(filter),
+                  ],
+                ),
               );
             }).toList(),
             onChanged: (value) {
@@ -143,9 +148,10 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
       0.0,
       (sum, item) => sum + (item['price'] as num),
     );
-    final maxValue =
-        monthlyData.values.fold(0.0, (max, v) => v > max ? v : max);
-    final chartMaxY = maxValue > 0 ? maxValue * 1.2 : 1.0;
+    final maxValue = monthlyData.values.fold(
+      0.0,
+      (max, v) => v > max ? v : max,
+    );
 
     return Padding(
       padding: const EdgeInsets.all(12.0),
@@ -163,7 +169,7 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                "${total.toStringAsFixed(0)} руб.",
+                "${total.toStringAsFixed(0)} ₽",
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -175,7 +181,7 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                 height: 250,
                 child: BarChart(
                   BarChartData(
-                    maxY: chartMaxY,
+                    maxY: maxValue > 0 ? maxValue * 1.2 : 1,
                     gridData: FlGridData(
                       show: true,
                       drawVerticalLine: false,
@@ -195,44 +201,15 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                       rightTitles: const AxisTitles(
                         sideTitles: SideTitles(showTitles: false),
                       ),
-                      topTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 28,
-                          getTitlesWidget: (value, meta) {
-                            final index = value.toInt();
-                            if (index < 0 || index >= monthlyData.length) {
-                              return const SizedBox.shrink();
-                            }
-                            final entry = monthlyData.entries.elementAt(index);
-                            if (entry.value == 0) {
-                              return const SizedBox.shrink();
-                            }
-                            return SideTitleWidget(
-                              meta: meta,
-                              space: -235, // Pulls the title down
-                              child: RotatedBox(
-                                quarterTurns: -1,
-                                child: Text(
-                                  entry.value.toStringAsFixed(1),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
                       ),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
                           getTitlesWidget: (value, meta) {
                             final index = value.toInt();
-                            if (index >= 0 &&
-                                index < monthlyData.keys.length) {
+                            if (index >= 0 && index < monthlyData.keys.length) {
                               return SideTitleWidget(
                                 space: 6,
                                 meta: meta,
@@ -257,7 +234,7 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                         x: index,
                         barRods: [
                           BarChartRodData(
-                            toY: isEmpty ? chartMaxY : entry.value,
+                            toY: entry.value,
                             color: isEmpty
                                 ? Colors.grey.shade300
                                 : Colors.blue.shade700,
@@ -265,10 +242,40 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                         ],
+                        showingTooltipIndicators: entry.value > 0 ? [0] : [],
                       );
                     }).toList(),
                     barTouchData: BarTouchData(
-                      enabled: false,
+                      enabled: true,
+                      touchTooltipData: BarTouchTooltipData(
+                        getTooltipColor: (_) => Colors.transparent,
+                        tooltipPadding: const EdgeInsets.all(0),
+                        tooltipMargin: -100,
+                        getTooltipItem:
+                            (
+                              BarChartGroupData group,
+                              int groupIndex,
+                              BarChartRodData rod,
+                              int rodIndex,
+                            ) {
+                              final amount = rod.toY.toStringAsFixed(0);
+                              final verticalAmount = amount
+                                  .split('')
+                                  .join('\n');
+                              return BarTooltipItem(
+                                verticalAmount,
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  height: 1.2,
+                                ),
+                              );
+                            },
+                      ),
+                      touchCallback: (event, response) {
+                        // Don't do anything on touch
+                      },
                     ),
                   ),
                   swapAnimationDuration: const Duration(milliseconds: 250),

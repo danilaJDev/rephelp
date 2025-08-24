@@ -15,20 +15,36 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
   List<Map<String, dynamic>> _incomeData = [];
   bool _isLoading = true;
   DateTimeRange? _selectedDateRange;
+  String _selectedFilter = 'Текущий месяц';
+
+  final Map<String, DateTimeRange> _dateFilters = {
+    'Текущий месяц': DateTimeRange(
+      start: DateTime(DateTime.now().year, DateTime.now().month, 1),
+      end: DateTime.now(),
+    ),
+    'Последние 3 месяца': DateTimeRange(
+      start: DateTime(
+        DateTime.now().year,
+        DateTime.now().month - 3,
+        DateTime.now().day,
+      ),
+      end: DateTime.now(),
+    ),
+    'Последние 6 месяцев': DateTimeRange(
+      start: DateTime(
+        DateTime.now().year,
+        DateTime.now().month - 6,
+        DateTime.now().day,
+      ),
+      end: DateTime.now(),
+    ),
+    'За все время': DateTimeRange(start: DateTime(2000), end: DateTime.now()),
+  };
 
   @override
   void initState() {
     super.initState();
-    _setInitialDateRangeAndLoadData();
-  }
-
-  void _setInitialDateRangeAndLoadData() {
-    final now = DateTime.now();
-    final initialRange = DateTimeRange(
-      start: DateTime(now.year, now.month, 1),
-      end: now,
-    );
-    _loadIncomeData(initialRange);
+    _loadIncomeData(_dateFilters[_selectedFilter]!);
   }
 
   Future<void> _loadIncomeData(DateTimeRange dateRange) async {
@@ -69,7 +85,7 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                _buildDateFilterButtons(),
+                _buildDateFilterDropdown(),
                 Expanded(child: _buildChart()),
                 _buildTotalIncome(),
               ],
@@ -77,67 +93,37 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
     );
   }
 
-  Widget _buildDateFilterButtons() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Wrap(
-        spacing: 8.0,
-        runSpacing: 4.0,
-        alignment: WrapAlignment.center,
-        children: [
-          _buildFilterChip("Текущий месяц", _selectCurrentMonth),
-          _buildFilterChip("Последние 3 месяца", _selectLast3Months),
-          _buildFilterChip("Последние 6 месяцев", _selectLast6Months),
-          _buildFilterChip("За все время", _selectAllTime),
-          _buildFilterChip("Выбрать диапазон", _selectCustomDateRange),
-        ],
+  Widget _buildDateFilterDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: DropdownButton<String>(
+        value: _selectedFilter,
+        isExpanded: true,
+        items: [
+          ..._dateFilters.keys,
+          'Выбрать диапазон...',
+        ].map<DropdownMenuItem<String>>((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value),
+          );
+        }).toList(),
+        onChanged: (String? newValue) {
+          if (newValue == null) return;
+
+          if (newValue == 'Выбрать диапазон...') {
+            _selectCustomDateRange();
+          } else {
+            setState(() {
+              _selectedFilter = newValue;
+            });
+            _loadIncomeData(_dateFilters[newValue]!);
+          }
+        },
       ),
     );
   }
-
-  Widget _buildFilterChip(String label, VoidCallback onSelected) {
-    return ActionChip(
-      label: Text(label),
-      onPressed: onSelected,
-      backgroundColor: Colors.blue.withOpacity(0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: Colors.blue, width: 1),
-      ),
-    );
-  }
-
-  void _selectCurrentMonth() {
-    final now = DateTime.now();
-    _loadIncomeData(DateTimeRange(
-      start: DateTime(now.year, now.month, 1),
-      end: now,
-    ));
-  }
-
-  void _selectLast3Months() {
-    final now = DateTime.now();
-    _loadIncomeData(DateTimeRange(
-      start: DateTime(now.year, now.month - 3, now.day),
-      end: now,
-    ));
-  }
-
-  void _selectLast6Months() {
-    final now = DateTime.now();
-    _loadIncomeData(DateTimeRange(
-      start: DateTime(now.year, now.month - 6, now.day),
-      end: now,
-    ));
-  }
-
-  void _selectAllTime() {
-    _loadIncomeData(DateTimeRange(
-      start: DateTime(2000),
-      end: DateTime.now(),
-    ));
-  }
-
+  
   Future<void> _selectCustomDateRange() async {
     final picked = await showDateRangePicker(
       context: context,
@@ -146,6 +132,9 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
       initialDateRange: _selectedDateRange,
     );
     if (picked != null) {
+      setState(() {
+        _selectedFilter = 'Выбрать диапазон...';
+      });
       _loadIncomeData(picked);
     }
   }
@@ -156,27 +145,16 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
       return const Center(child: Text("Нет данных за выбранный период"));
     }
 
-    final barGroups = monthlyData.entries.map((entry) {
+    final spots = monthlyData.entries.map((entry) {
       final index = monthlyData.keys.toList().indexOf(entry.key);
-      return BarChartGroupData(
-        x: index,
-        barRods: [
-          BarChartRodData(
-            toY: entry.value,
-            color: Colors.blue,
-            width: 16,
-          )
-        ],
-      );
+      return FlSpot(index.toDouble(), entry.value);
     }).toList();
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: BarChart(
-        BarChartData(
-          alignment: BarChartAlignment.spaceAround,
-          maxY: (monthlyData.values.reduce((a, b) => a > b ? a : b) * 1.2),
-          barGroups: barGroups,
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(show: false),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
@@ -203,13 +181,33 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                 showTitles: true,
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) {
-                  return Text('${value.toInt()}');
+                  if (value % 10000 == 0 && value > 0) {
+                    return Text('${(value / 1000).toStringAsFixed(0)}k');
+                  }
+                  return const Text('');
                 },
               ),
             ),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
+          borderData: FlBorderData(show: false),
+          lineBarsData: [
+            LineChartBarData(
+              spots: spots,
+              isCurved: true,
+              color: Colors.blue,
+              barWidth: 3,
+              isStrokeCapRound: true,
+              dotData: FlDotData(show: true),
+              belowBarData: BarAreaData(
+                show: true,
+                color: Colors.blue.withOpacity(0.2),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -234,9 +232,10 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
               Text(
                 '${total.toStringAsFixed(0)} руб.',
                 style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green),
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
               ),
             ],
           ),

@@ -154,7 +154,8 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
       0.0,
       (sum, item) => sum + (item['price'] as num),
     );
-    final maxValue = monthlyData.values.fold(0.0, (max, v) => v > max ? v : max);
+    final maxValue =
+        monthlyData.values.fold(0.0, (max, v) => v > max ? v : max);
 
     return Padding(
       padding: const EdgeInsets.all(12.0),
@@ -184,7 +185,7 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                 height: 250,
                 child: BarChart(
                   BarChartData(
-                    maxY: maxValue * 1.2,
+                    maxY: maxValue > 0 ? maxValue * 1.2 : 1,
                     gridData: FlGridData(
                       show: true,
                       drawVerticalLine: false,
@@ -243,47 +244,39 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                                 : Colors.blue.shade700,
                             width: 36,
                             borderRadius: BorderRadius.circular(6),
-                            backDrawRodData: BackgroundBarChartRodData(
-                              show: true,
-                              toY: maxValue * 1.2,
-                              color: Colors.transparent,
-                            ),
                           ),
                         ],
-                        showingTooltipIndicators: [],
+                        showingTooltipIndicators: entry.value > 0 ? [0] : [],
                       );
                     }).toList(),
                     barTouchData: BarTouchData(
-                      enabled: false,
+                      enabled: true,
                       touchTooltipData: BarTouchTooltipData(
-                        tooltipBgColor: Colors.transparent,
-                        tooltipPadding: EdgeInsets.zero,
-                        tooltipMargin: 0,
+                        tooltipBackgroundColor: Colors.transparent,
+                        tooltipPadding: const EdgeInsets.all(0),
+                        tooltipMargin: -100,
                         getTooltipItem: (
                           BarChartGroupData group,
                           int groupIndex,
                           BarChartRodData rod,
                           int rodIndex,
                         ) {
-                          if (rod.toY == 0) return null;
+                          final amount = rod.toY.toStringAsFixed(0);
+                          final verticalAmount = amount.split('').join('\n');
                           return BarTooltipItem(
-                            '',
-                            children: [
-                              RotatedBox(
-                                quarterTurns: -1,
-                                child: Text(
-                                  rod.toY.toStringAsFixed(0),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ],
+                            verticalAmount,
+                            const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              height: 1.2,
+                            ),
                           );
                         },
                       ),
+                      touchCallback: (event, response) {
+                        // Don't do anything on touch
+                      },
                     ),
                   ),
                   swapAnimationDuration: const Duration(milliseconds: 250),

@@ -14,18 +14,18 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
   final AppDatabase _database = AppDatabase();
   List<Map<String, dynamic>> _incomeData = [];
   bool _isLoading = true;
-  String _selectedFilter = 'Доходы за 3 месяца';
+  String _selectedFilter = 'Квартал';
 
   final Map<String, DateTimeRange> _dateFilters = {
-    'Доходы за 3 месяца': DateTimeRange(
+    'Квартал': DateTimeRange(
       start: DateTime(DateTime.now().year, DateTime.now().month - 2, 1),
       end: DateTime.now(),
     ),
-    'Доходы за 6 месяцев': DateTimeRange(
+    'Полгода': DateTimeRange(
       start: DateTime(DateTime.now().year, DateTime.now().month - 5, 1),
       end: DateTime.now(),
     ),
-    'Доходы за 12 месяцев': DateTimeRange(
+    'Год': DateTimeRange(
       start: DateTime(DateTime.now().year, DateTime.now().month - 11, 1),
       end: DateTime.now(),
     ),
@@ -94,11 +94,6 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
   }
 
   Widget _buildFilterDropdown() {
-    final filterIcons = {
-      'Доходы за 3 месяца': Icons.filter_3,
-      'Доходы за 6 месяцев': Icons.filter_6,
-      'Доходы за 12 месяцев': Icons.filter_9_plus,
-    };
     return Padding(
       padding: const EdgeInsets.all(12.0),
       child: Container(
@@ -107,40 +102,43 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
         ),
-        child: DropdownButtonFormField<String>(
-          value: _selectedFilter,
-          isExpanded: true,
-          decoration: const InputDecoration(
-            border: InputBorder.none,
-            prefixIcon: Icon(
-              Icons.calendar_today_outlined,
-              color: Colors.black54,
-            ),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          ),
-          dropdownColor: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          items: _dateFilters.keys.map((filter) {
-            return DropdownMenuItem(
-              value: filter,
-              child: Row(
-                children: [
-                  Icon(
-                    filterIcons[filter] ?? Icons.date_range,
-                    color: Colors.black54,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(filter),
-                ],
+        child: DropdownButtonHideUnderline(
+          child: DropdownButtonFormField<String>(
+            value: _selectedFilter,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              prefixIcon: Icon(
+                Icons.calendar_today_outlined,
+                color: Colors.black54,
               ),
-            );
-          }).toList(),
-          onChanged: (value) {
-            if (value != null) {
-              setState(() => _selectedFilter = value);
-              _loadIncomeData(_dateFilters[value]!);
-            }
-          },
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            ),
+            dropdownColor: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            items: _dateFilters.keys.map((filter) {
+              return DropdownMenuItem(
+                value: filter,
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.date_range,
+                      color: Colors.black54,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(filter),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              if (value != null) {
+                setState(() => _selectedFilter = value);
+                _loadIncomeData(_dateFilters[value]!);
+              }
+            },
+          ),
         ),
       ),
     );
@@ -252,7 +250,7 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                     barTouchData: BarTouchData(
                       enabled: true,
                       touchTooltipData: BarTouchTooltipData(
-                        tooltipBackgroundColor: Colors.transparent,
+                        getTooltipColor: (_) => Colors.transparent,
                         tooltipPadding: const EdgeInsets.all(0),
                         tooltipMargin: -100,
                         getTooltipItem: (

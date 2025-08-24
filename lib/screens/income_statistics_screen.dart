@@ -145,7 +145,7 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
     );
     final maxValue =
         monthlyData.values.fold(0.0, (max, v) => v > max ? v : max);
-    final chartMaxY = maxValue > 0 ? maxValue * 1.2 : 1;
+    final chartMaxY = maxValue > 0 ? maxValue * 1.2 : 1.0;
 
     return Padding(
       padding: const EdgeInsets.all(12.0),
@@ -209,7 +209,7 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                               return const SizedBox.shrink();
                             }
                             return SideTitleWidget(
-                              axisSide: meta.axisSide,
+                              meta: meta,
                               space: -235, // Pulls the title down
                               child: RotatedBox(
                                 quarterTurns: -1,

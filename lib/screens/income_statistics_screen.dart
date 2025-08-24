@@ -123,7 +123,7 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
       ),
     );
   }
-
+  
   Future<void> _selectCustomDateRange() async {
     final picked = await showDateRangePicker(
       context: context,

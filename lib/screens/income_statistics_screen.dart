@@ -54,7 +54,6 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
   }
 
   Map<String, double> _groupDataByMonthWithAll(DateTimeRange range) {
-    // Генерируем список месяцев в диапазоне
     final Map<String, double> monthlyTotals = {};
     DateTime current = DateTime(range.start.year, range.start.month);
     final end = DateTime(range.end.year, range.end.month);
@@ -65,7 +64,6 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
       current = DateTime(current.year, current.month + 1);
     }
 
-    // Заполняем доходами
     for (var item in _incomeData) {
       final date = DateTime.fromMillisecondsSinceEpoch(item['start_time']);
       final monthKey = DateFormat.MMM('ru').format(date).toUpperCase();
@@ -84,16 +82,23 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
       backgroundColor: const Color(0xFFF5F7FA),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                _buildFilterDropdown(),
-                Expanded(child: _buildChartCard()),
-              ],
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildFilterDropdown(),
+                  _buildChartCard(),
+                ],
+              ),
             ),
     );
   }
 
   Widget _buildFilterDropdown() {
+    final filterIcons = {
+      'Доходы за 3 месяца': Icons.filter_3,
+      'Доходы за 6 месяцев': Icons.filter_6,
+      'Доходы за 12 месяцев': Icons.filter_9_plus,
+    };
     return Padding(
       padding: const EdgeInsets.all(12.0),
       child: Container(
@@ -113,12 +118,23 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
             ),
             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           ),
-          items: _dateFilters.keys
-              .map(
-                (filter) =>
-                    DropdownMenuItem(value: filter, child: Text(filter)),
-              )
-              .toList(),
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          items: _dateFilters.keys.map((filter) {
+            return DropdownMenuItem(
+              value: filter,
+              child: Row(
+                children: [
+                  Icon(
+                    filterIcons[filter] ?? Icons.date_range,
+                    color: Colors.black54,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(filter),
+                ],
+              ),
+            );
+          }).toList(),
           onChanged: (value) {
             if (value != null) {
               setState(() => _selectedFilter = value);
@@ -138,6 +154,7 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
       0.0,
       (sum, item) => sum + (item['price'] as num),
     );
+    final maxValue = monthlyData.values.fold(0.0, (max, v) => v > max ? v : max);
 
     return Padding(
       padding: const EdgeInsets.all(12.0),
@@ -164,9 +181,10 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
               ),
               const SizedBox(height: 16),
               SizedBox(
-                height: 250, // фиксированная высота графика
+                height: 250,
                 child: BarChart(
                   BarChartData(
+                    maxY: maxValue * 1.2,
                     gridData: FlGridData(
                       show: true,
                       drawVerticalLine: false,
@@ -225,13 +243,48 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                                 : Colors.blue.shade700,
                             width: 36,
                             borderRadius: BorderRadius.circular(6),
+                            backDrawRodData: BackgroundBarChartRodData(
+                              show: true,
+                              toY: maxValue * 1.2,
+                              color: Colors.transparent,
+                            ),
                           ),
                         ],
                         showingTooltipIndicators: [],
                       );
                     }).toList(),
-                    barTouchData: BarTouchData(enabled: false),
-                    extraLinesData: ExtraLinesData(),
+                    barTouchData: BarTouchData(
+                      enabled: false,
+                      touchTooltipData: BarTouchTooltipData(
+                        tooltipBgColor: Colors.transparent,
+                        tooltipPadding: EdgeInsets.zero,
+                        tooltipMargin: 0,
+                        getTooltipItem: (
+                          BarChartGroupData group,
+                          int groupIndex,
+                          BarChartRodData rod,
+                          int rodIndex,
+                        ) {
+                          if (rod.toY == 0) return null;
+                          return BarTooltipItem(
+                            '',
+                            children: [
+                              RotatedBox(
+                                quarterTurns: -1,
+                                child: Text(
+                                  rod.toY.toStringAsFixed(0),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
                   ),
                   swapAnimationDuration: const Duration(milliseconds: 250),
                 ),

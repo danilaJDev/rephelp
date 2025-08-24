@@ -49,14 +49,8 @@ class _FinanceScreenState extends State<FinanceScreen>
             child: TabBar(
               controller: _tabController,
               tabs: const [
-                Tab(
-                  icon: Icon(Icons.payment),
-                  text: 'Занятия',
-                ),
-                Tab(
-                  icon: Icon(Icons.bar_chart),
-                  text: 'Статистика',
-                ),
+                Tab(icon: Icon(Icons.payment), text: 'Занятия'),
+                Tab(icon: Icon(Icons.bar_chart), text: 'Статистика'),
               ],
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white70,
@@ -66,10 +60,7 @@ class _FinanceScreenState extends State<FinanceScreen>
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: const [
-                ClassesView(),
-                IncomeStatisticsScreen(),
-              ],
+              children: const [ClassesView(), IncomeStatisticsScreen()],
             ),
           ),
         ],
@@ -142,7 +133,12 @@ class _ClassesViewState extends State<ClassesView> {
         unpaid += price;
       }
 
-      final studentName = '${lesson['name']} ${lesson['surname'] ?? ''}';
+      String studentName;
+      if (lesson['name'] == null) {
+        studentName = 'Удаленный ученик';
+      } else {
+        studentName = '${lesson['name']} ${lesson['surname'] ?? ''}';
+      }
       groupedData.putIfAbsent(studentName, () => []).add(lesson);
     }
 
@@ -279,8 +275,9 @@ class _ClassesViewState extends State<ClassesView> {
                 child: ListTile(
                   leading: CircleAvatar(
                     radius: 18,
-                    backgroundColor:
-                        isPaid ? Colors.green[100] : Colors.orange[100],
+                    backgroundColor: isPaid
+                        ? Colors.green[100]
+                        : Colors.orange[100],
                     child: Icon(
                       isPaid ? Icons.check_circle : Icons.hourglass_bottom,
                       color: isPaid ? Colors.green : Colors.orange,

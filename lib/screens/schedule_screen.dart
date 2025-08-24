@@ -52,15 +52,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
   Future<void> _loadLessonsForDay(DateTime day) async {
     final lessons = await _database.getLessonsByDate(day);
+    final studentMap = {for (var s in _students) s.id: s};
     final List<Map<String, dynamic>> lessonsWithStudents = [];
     for (var lesson in lessons) {
-      try {
-        final student = _students.firstWhere((s) => s.id == lesson.studentId);
+      if (lesson.studentId != null &&
+          studentMap.containsKey(lesson.studentId)) {
+        final student = studentMap[lesson.studentId]!;
         lessonsWithStudents.add({'lesson': lesson, 'student': student});
-      } catch (e) {
-        print(
-          'Error: Student with id ${lesson.studentId} not found for lesson ${lesson.id}',
-        );
       }
     }
     if (!mounted) return;

@@ -28,7 +28,7 @@ class AppDatabase {
 
     return await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -115,11 +115,36 @@ class AppDatabase {
       }
       await db.execute('DROP TABLE lessons_old');
     }
+
     if (oldVersion < 5) {
       await db.execute('ALTER TABLE lessons ADD COLUMN notes TEXT');
     }
+
     if (oldVersion < 6) {
       await db.execute('ALTER TABLE lessons ADD COLUMN price REAL');
+    }
+
+    if (oldVersion < 7) {
+      await db.execute('ALTER TABLE lessons RENAME TO lessons_old');
+      await db.execute('''
+      CREATE TABLE lessons(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER,
+        start_time INTEGER,
+        end_time INTEGER,
+        is_paid INTEGER,
+        notes TEXT,
+        price REAL,
+        FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE SET NULL
+      )
+    ''');
+      final List<Map<String, dynamic>> oldLessons = await db.query(
+        'lessons_old',
+      );
+      for (final oldLesson in oldLessons) {
+        await db.insert('lessons', oldLesson);
+      }
+      await db.execute('DROP TABLE lessons_old');
     }
   }
 
@@ -163,6 +188,14 @@ class AppDatabase {
 
   Future<int> deleteStudent(int id) async {
     final db = await database;
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    await db.delete(
+      'lessons',
+      where: 'student_id = ? AND start_time > ?',
+      whereArgs: [id, now],
+    );
+
     return await db.delete('students', where: 'id = ?', whereArgs: [id]);
   }
 
@@ -228,7 +261,7 @@ class AppDatabase {
       students.name,
       lessons.price
     FROM lessons
-    INNER JOIN students ON lessons.student_id = students.id
+    LEFT JOIN students ON lessons.student_id = students.id
     WHERE lessons.id = ?
   ''',
       [lessonId],

@@ -54,7 +54,6 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
   }
 
   Map<String, double> _groupDataByMonthWithAll(DateTimeRange range) {
-    // Генерируем список месяцев в диапазоне
     final Map<String, double> monthlyTotals = {};
     DateTime current = DateTime(range.start.year, range.start.month);
     final end = DateTime(range.end.year, range.end.month);
@@ -65,7 +64,6 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
       current = DateTime(current.year, current.month + 1);
     }
 
-    // Заполняем доходами
     for (var item in _incomeData) {
       final date = DateTime.fromMillisecondsSinceEpoch(item['start_time']);
       final monthKey = DateFormat.MMM('ru').format(date).toUpperCase();
@@ -84,11 +82,13 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
       backgroundColor: const Color(0xFFF5F7FA),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                _buildFilterDropdown(),
-                Expanded(child: _buildChartCard()),
-              ],
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildFilterDropdown(),
+                  _buildChartCard(),
+                ],
+              ),
             ),
     );
   }
@@ -102,29 +102,34 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
         ),
-        child: DropdownButtonFormField<String>(
-          value: _selectedFilter,
-          isExpanded: true,
-          decoration: const InputDecoration(
-            border: InputBorder.none,
-            prefixIcon: Icon(
-              Icons.calendar_today_outlined,
-              color: Colors.black54,
+        child: DropdownButtonHideUnderline(
+          child: DropdownButtonFormField<String>(
+            value: _selectedFilter,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              prefixIcon: Icon(
+                Icons.calendar_today_outlined,
+                color: Colors.black54,
+              ),
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             ),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            dropdownColor: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            items: _dateFilters.keys.map((filter) {
+              return DropdownMenuItem(
+                value: filter,
+                child: Text(filter),
+              );
+            }).toList(),
+            onChanged: (value) {
+              if (value != null) {
+                setState(() => _selectedFilter = value);
+                _loadIncomeData(_dateFilters[value]!);
+              }
+            },
           ),
-          items: _dateFilters.keys
-              .map(
-                (filter) =>
-                    DropdownMenuItem(value: filter, child: Text(filter)),
-              )
-              .toList(),
-          onChanged: (value) {
-            if (value != null) {
-              setState(() => _selectedFilter = value);
-              _loadIncomeData(_dateFilters[value]!);
-            }
-          },
         ),
       ),
     );
@@ -138,6 +143,9 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
       0.0,
       (sum, item) => sum + (item['price'] as num),
     );
+    final maxValue =
+        monthlyData.values.fold(0.0, (max, v) => v > max ? v : max);
+    final chartMaxY = maxValue > 0 ? maxValue * 1.2 : 1.0;
 
     return Padding(
       padding: const EdgeInsets.all(12.0),
@@ -155,7 +163,7 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                "${total.toStringAsFixed(0)} ₽",
+                "${total.toStringAsFixed(0)} руб.",
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -164,9 +172,10 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
               ),
               const SizedBox(height: 16),
               SizedBox(
-                height: 250, // фиксированная высота графика
+                height: 250,
                 child: BarChart(
                   BarChartData(
+                    maxY: chartMaxY,
                     gridData: FlGridData(
                       show: true,
                       drawVerticalLine: false,
@@ -186,15 +195,44 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                       rightTitles: const AxisTitles(
                         sideTitles: SideTitles(showTitles: false),
                       ),
-                      topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
+                      topTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 28,
+                          getTitlesWidget: (value, meta) {
+                            final index = value.toInt();
+                            if (index < 0 || index >= monthlyData.length) {
+                              return const SizedBox.shrink();
+                            }
+                            final entry = monthlyData.entries.elementAt(index);
+                            if (entry.value == 0) {
+                              return const SizedBox.shrink();
+                            }
+                            return SideTitleWidget(
+                              meta: meta,
+                              space: -235, // Pulls the title down
+                              child: RotatedBox(
+                                quarterTurns: -1,
+                                child: Text(
+                                  entry.value.toStringAsFixed(1),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
                           getTitlesWidget: (value, meta) {
                             final index = value.toInt();
-                            if (index >= 0 && index < monthlyData.keys.length) {
+                            if (index >= 0 &&
+                                index < monthlyData.keys.length) {
                               return SideTitleWidget(
                                 space: 6,
                                 meta: meta,
@@ -219,7 +257,7 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                         x: index,
                         barRods: [
                           BarChartRodData(
-                            toY: entry.value,
+                            toY: isEmpty ? chartMaxY : entry.value,
                             color: isEmpty
                                 ? Colors.grey.shade300
                                 : Colors.blue.shade700,
@@ -227,11 +265,11 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                         ],
-                        showingTooltipIndicators: [],
                       );
                     }).toList(),
-                    barTouchData: BarTouchData(enabled: false),
-                    extraLinesData: ExtraLinesData(),
+                    barTouchData: BarTouchData(
+                      enabled: false,
+                    ),
                   ),
                   swapAnimationDuration: const Duration(milliseconds: 250),
                 ),

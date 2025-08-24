@@ -12,7 +12,7 @@ class FinanceScreen extends StatefulWidget {
 
 class _FinanceScreenState extends State<FinanceScreen> {
   final AppDatabase _database = AppDatabase();
-  List<Map<String, dynamic>> _financialData = [];
+  Map<String, List<Map<String, dynamic>>> _groupedFinancialData = {};
   double _totalEarned = 0.0;
   double _unpaidAmount = 0.0;
   bool _isLoading = true;
@@ -23,10 +23,11 @@ class _FinanceScreenState extends State<FinanceScreen> {
     _loadFinancialData();
   }
 
-  Future<void> _loadFinancialData() async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _loadFinancialData({bool withSpinner = true}) async {
+    if (withSpinner) {
+      if (!mounted) return;
+      setState(() => _isLoading = true);
+    }
 
     var allLessons = await _database.getFinancialData();
     final now = DateTime.now();
@@ -54,28 +55,35 @@ class _FinanceScreenState extends State<FinanceScreen> {
 
     double total = 0.0;
     double unpaid = 0.0;
+    Map<String, List<Map<String, dynamic>>> groupedData = {};
 
     for (var lesson in pastLessons) {
       final price = (lesson['price'] as num).toDouble();
       final isPaid = lesson['is_paid'] == 1;
-      total += price;
-      if (!isPaid) {
+
+      if (isPaid) {
+        total += price;
+      } else {
         unpaid += price;
       }
+
+      final studentName = '${lesson['name']} ${lesson['surname'] ?? ''}';
+      groupedData.putIfAbsent(studentName, () => []).add(lesson);
     }
 
     if (!mounted) return;
     setState(() {
-      _financialData = pastLessons;
+      _groupedFinancialData = groupedData;
       _totalEarned = total;
       _unpaidAmount = unpaid;
-      _isLoading = false;
+      if (withSpinner) _isLoading = false; // не трогаем, если тихая загрузка
     });
   }
 
   Future<void> _toggleLessonPaidStatus(int lessonId, bool isPaid) async {
     await _database.updateLessonIsPaid(lessonId, !isPaid);
-    await _loadFinancialData();
+    // Тихое обновление — без спиннера, чтобы не схлопывались ExpansionTile
+    await _loadFinancialData(withSpinner: false);
   }
 
   @override
@@ -90,7 +98,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-              onRefresh: _loadFinancialData,
+              onRefresh: () => _loadFinancialData(withSpinner: false),
               child: Column(
                 children: [
                   _buildSummaryCard(),
@@ -152,7 +160,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
   }
 
   Widget _buildFinancialList() {
-    if (_financialData.isEmpty) {
+    if (_groupedFinancialData.isEmpty) {
       return const Center(
         child: Text(
           'Проведенных занятий пока нет',
@@ -161,65 +169,109 @@ class _FinanceScreenState extends State<FinanceScreen> {
       );
     }
 
+    final studentNames = _groupedFinancialData.keys.toList();
+
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: _financialData.length,
+      itemCount: studentNames.length,
       itemBuilder: (context, index) {
-        final lesson = _financialData[index];
-        final startTime = DateTime.fromMillisecondsSinceEpoch(
-          lesson['start_time'],
-        );
-        final endTime = DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
-        final isPaid = lesson['is_paid'] == 1;
-        final studentName = '${lesson['name']} ${lesson['surname'] ?? ''}';
-        final lessonDate = DateFormat.yMMMd('ru').format(startTime);
-        final lessonTime =
-            '${DateFormat.Hm('ru').format(startTime)} - ${DateFormat.Hm('ru').format(endTime)}';
-        final price = (lesson['price'] as num).toStringAsFixed(0);
+        final studentName = studentNames[index];
+        final lessons = _groupedFinancialData[studentName]!;
 
-        // Цвет карточки в зависимости от статуса оплаты
-        final cardColor = isPaid ? Colors.green[50] : Colors.orange[50];
-        final statusText = isPaid ? 'Оплачено' : 'Ожидает оплаты';
-        final statusColor = isPaid ? Colors.green : Colors.orange;
+        // Новые сверху
+        lessons.sort(
+          (a, b) => (b['start_time'] as int).compareTo(a['start_time'] as int),
+        );
 
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          color: cardColor,
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 8,
-            ),
+          child: ExpansionTile(
+            key: PageStorageKey<String>('finance_$studentName'),
+            maintainState: true,
             title: Text(
               studentName,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('$lessonDate, $lessonTime'),
-                const SizedBox(height: 4),
-                Text(
-                  statusText,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: statusColor,
+            children: lessons.map((lesson) {
+              final startTime = DateTime.fromMillisecondsSinceEpoch(
+                lesson['start_time'],
+              );
+              final endTime = DateTime.fromMillisecondsSinceEpoch(
+                lesson['end_time'],
+              );
+              final isPaid = lesson['is_paid'] == 1;
+              final lessonDate = DateFormat.yMMMd('ru').format(startTime);
+              final lessonTime =
+                  '${DateFormat.Hm('ru').format(startTime)} - ${DateFormat.Hm('ru').format(endTime)}';
+              final price = (lesson['price'] as num).toStringAsFixed(0);
+
+              final cardColor = isPaid ? Colors.green[50] : Colors.red[50];
+              final statusText = isPaid ? 'Оплачено' : 'Ожидает оплаты';
+              final statusColor = isPaid ? Colors.green : Colors.red;
+
+              return Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  leading: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: isPaid
+                        ? Colors.green[100]
+                        : Colors.orange[100],
+                    child: Icon(
+                      isPaid ? Icons.check_circle : Icons.hourglass_bottom,
+                      color: isPaid ? Colors.green : Colors.orange,
+                      size: 22,
+                    ),
                   ),
+                  tileColor: isPaid ? Colors.green[50] : Colors.orange[50],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  title: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        lessonDate,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        lessonTime,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  subtitle: Text(
+                    statusText,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: statusColor,
+                    ),
+                  ),
+                  trailing: Text(
+                    '$price руб.',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: statusColor,
+                    ),
+                  ),
+                  onTap: () {
+                    _toggleLessonPaidStatus(lesson['id'] as int, isPaid);
+                  },
                 ),
-              ],
-            ),
-            trailing: Text(
-              '$price руб.',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: statusColor,
-              ),
-            ),
-            onTap: () {
-              // При нажатии можно менять статус оплаты
-              _toggleLessonPaidStatus(lesson['id'] as int, isPaid);
-            },
+              );
+            }).toList(),
           ),
         );
       },

@@ -76,13 +76,13 @@ class _FinanceScreenState extends State<FinanceScreen> {
       _groupedFinancialData = groupedData;
       _totalEarned = total;
       _unpaidAmount = unpaid;
-      if (withSpinner) _isLoading = false; // не трогаем, если тихая загрузка
+      if (withSpinner) _isLoading = false;
     });
   }
 
   Future<void> _toggleLessonPaidStatus(int lessonId, bool isPaid) async {
     await _database.updateLessonIsPaid(lessonId, !isPaid);
-    // Тихое обновление — без спиннера, чтобы не схлопывались ExpansionTile
+
     await _loadFinancialData(withSpinner: false);
   }
 
@@ -178,7 +178,6 @@ class _FinanceScreenState extends State<FinanceScreen> {
         final studentName = studentNames[index];
         final lessons = _groupedFinancialData[studentName]!;
 
-        // Новые сверху
         lessons.sort(
           (a, b) => (b['start_time'] as int).compareTo(a['start_time'] as int),
         );
@@ -205,7 +204,6 @@ class _FinanceScreenState extends State<FinanceScreen> {
                   '${DateFormat.Hm('ru').format(startTime)} - ${DateFormat.Hm('ru').format(endTime)}';
               final price = (lesson['price'] as num).toStringAsFixed(0);
 
-              final cardColor = isPaid ? Colors.green[50] : Colors.red[50];
               final statusText = isPaid ? 'Оплачено' : 'Ожидает оплаты';
               final statusColor = isPaid ? Colors.green : Colors.red;
 

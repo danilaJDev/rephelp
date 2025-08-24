@@ -226,7 +226,7 @@ class AppDatabase {
       lessons.end_time,
       lessons.is_paid,
       students.name,
-      students.price
+      lessons.price
     FROM lessons
     INNER JOIN students ON lessons.student_id = students.id
     WHERE lessons.id = ?
@@ -332,7 +332,7 @@ class AppDatabase {
       lessons.is_paid,
       students.name,
       students.surname,
-      students.price,
+      lessons.price,
       students.autoPay
     FROM lessons
     INNER JOIN students ON lessons.student_id = students.id

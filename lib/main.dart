@@ -32,7 +32,6 @@ class RepHelpApp extends StatelessWidget {
       ],
       supportedLocales: const [Locale('ru')],
       theme: ThemeData(
-        // Основная цветовая схема
         primarySwatch: primaryColor,
         scaffoldBackgroundColor: const Color(0xFFF5F5F8),
         colorScheme: ColorScheme.fromSwatch(
@@ -41,7 +40,6 @@ class RepHelpApp extends StatelessWidget {
           backgroundColor: const Color(0xFFF5F5F8),
           cardColor: Colors.white,
         ).copyWith(secondary: primaryColor),
-        // Тема для AppBar
         appBarTheme: const AppBarTheme(
           backgroundColor: primaryColor,
           elevation: 0,
@@ -52,7 +50,6 @@ class RepHelpApp extends StatelessWidget {
           ),
           iconTheme: IconThemeData(color: Colors.white),
         ),
-        // Тема для карточек
         cardTheme: CardThemeData(
           elevation: 1,
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -60,7 +57,6 @@ class RepHelpApp extends StatelessWidget {
             borderRadius: BorderRadius.circular(12.0),
           ),
         ),
-        // Тема для полей ввода
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
@@ -73,7 +69,6 @@ class RepHelpApp extends StatelessWidget {
             borderSide: const BorderSide(color: primaryColor),
           ),
         ),
-        // Тема для нижней навигации
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           type: BottomNavigationBarType.fixed,
           selectedItemColor: primaryColor,

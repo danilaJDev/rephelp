@@ -137,75 +137,51 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: Column(
-        children: [
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 1,
-            child: ExpansionTile(
-              key: ValueKey(current),
-              leading: Icon(Icons.date_range, color: Colors.deepPurple),
-              title: Text(
-                current,
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              initiallyExpanded: _panelOpen,
-              onExpansionChanged: (open) => setState(() => _panelOpen = open),
-              children: [
-                ...others.map((label) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () {
-                        setState(() {
-                          _selectedFilter = label;
-                          _panelOpen = false;
-                        });
-                        _loadIncomeData(_dateFilters[label]!);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: Offset(2, 5),
-                            ),
-                          ],
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                          horizontal: 12,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.date_range, color: Colors.grey),
-                            const SizedBox(width: 12),
-                            Text(
-                              label,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 0, // убрали тень
+        child: ExpansionTile(
+          key: ValueKey(current),
+          leading: const Icon(Icons.date_range, color: Colors.deepPurple),
+          title: Text(
+            current,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          initiallyExpanded: _panelOpen,
+          onExpansionChanged: (open) => setState(() => _panelOpen = open),
+          children: [
+            const Divider(height: 1, thickness: 1, color: Colors.deepPurple),
+            ...others.map((label) {
+              return Column(
+                children: [
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.date_range, color: Colors.grey),
+                    title: Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  );
-                }).toList(),
-              ],
-            ),
-          ),
-        ],
+                    onTap: () {
+                      setState(() {
+                        _selectedFilter = label;
+                        _panelOpen = false;
+                      });
+                      _loadIncomeData(_dateFilters[label]!);
+                    },
+                  ),
+                  const Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: Colors.deepPurple,
+                  ),
+                ],
+              );
+            }).toList(),
+          ],
+        ),
       ),
     );
   }
@@ -279,8 +255,6 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
                 ],
               ),
             ),
-
-            
 
             SizedBox(
               width: 100,

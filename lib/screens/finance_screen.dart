@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:intl/intl.dart';
+import 'package:rephelp/screens/income_statistics_screen.dart';
 import 'package:rephelp/widgets/custom_app_bar.dart';
 
 class FinanceScreen extends StatefulWidget {
@@ -10,7 +11,75 @@ class FinanceScreen extends StatefulWidget {
   State<FinanceScreen> createState() => _FinanceScreenState();
 }
 
-class _FinanceScreenState extends State<FinanceScreen> {
+class _FinanceScreenState extends State<FinanceScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: CustomAppBar(
+        title: const Padding(
+          padding: EdgeInsets.only(left: 10),
+          child: Text('Финансы', style: TextStyle(fontSize: 24)),
+        ),
+      ),
+      body: Column(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              color: Colors.deepPurple,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(text: 'Занятия'),
+                Tab(text: 'Статистика доходов'),
+              ],
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+              indicatorColor: Colors.white,
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: const [
+                ClassesView(),
+                IncomeStatisticsScreen(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ClassesView extends StatefulWidget {
+  const ClassesView({super.key});
+
+  @override
+  State<ClassesView> createState() => _ClassesViewState();
+}
+
+class _ClassesViewState extends State<ClassesView> {
   final AppDatabase _database = AppDatabase();
   Map<String, List<Map<String, dynamic>>> _groupedFinancialData = {};
   double _totalEarned = 0.0;
@@ -88,25 +157,17 @@ class _FinanceScreenState extends State<FinanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CustomAppBar(
-        title: const Padding(
-          padding: EdgeInsets.only(left: 10),
-          child: Text('Финансы', style: TextStyle(fontSize: 24)),
-        ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: () => _loadFinancialData(withSpinner: false),
-              child: Column(
-                children: [
-                  _buildSummaryCard(),
-                  Expanded(child: _buildFinancialList()),
-                ],
-              ),
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : RefreshIndicator(
+            onRefresh: () => _loadFinancialData(withSpinner: false),
+            child: Column(
+              children: [
+                _buildSummaryCard(),
+                Expanded(child: _buildFinancialList()),
+              ],
             ),
-    );
+          );
   }
 
   Widget _buildSummaryCard() {
@@ -212,9 +273,8 @@ class _FinanceScreenState extends State<FinanceScreen> {
                 child: ListTile(
                   leading: CircleAvatar(
                     radius: 18,
-                    backgroundColor: isPaid
-                        ? Colors.green[100]
-                        : Colors.orange[100],
+                    backgroundColor:
+                        isPaid ? Colors.green[100] : Colors.orange[100],
                     child: Icon(
                       isPaid ? Icons.check_circle : Icons.hourglass_bottom,
                       color: isPaid ? Colors.green : Colors.orange,

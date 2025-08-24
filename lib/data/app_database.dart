@@ -339,4 +339,21 @@ class AppDatabase {
     ORDER BY lessons.start_time DESC;
   ''');
   }
+
+  Future<List<Map<String, dynamic>>> getFinancialDataByDateRange(
+    DateTime start,
+    DateTime end,
+  ) async {
+    final db = await database;
+    return await db.rawQuery(
+      '''
+      SELECT
+        lessons.start_time,
+        lessons.price
+      FROM lessons
+      WHERE is_paid = 1 AND start_time BETWEEN ? AND ?
+    ''',
+      [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],
+    );
+  }
 }

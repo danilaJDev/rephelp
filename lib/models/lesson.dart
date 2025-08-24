@@ -5,6 +5,7 @@ class Lesson {
   final DateTime endTime;
   final bool isPaid;
   final String? notes;
+  final double? price;
 
   Lesson({
     this.id,
@@ -13,6 +14,7 @@ class Lesson {
     required this.endTime,
     this.isPaid = false,
     this.notes,
+    this.price,
   });
 
   Map<String, dynamic> toMap() {
@@ -23,6 +25,7 @@ class Lesson {
       'end_time': endTime.millisecondsSinceEpoch,
       'is_paid': isPaid ? 1 : 0,
       'notes': notes,
+      'price': price,
     };
   }
 
@@ -34,6 +37,7 @@ class Lesson {
       endTime: DateTime.fromMillisecondsSinceEpoch(map['end_time'] as int),
       isPaid: (map['is_paid'] as int) == 1,
       notes: map['notes'] as String?,
+      price: map['price'] as double?,
     );
   }
 }

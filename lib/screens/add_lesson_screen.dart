@@ -123,6 +123,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
           endTime: newEndTime,
           isPaid: lesson.isPaid,
           notes: _notesController.text,
+          price: student.price,
         );
       }).toList();
 
@@ -155,6 +156,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                 _endTime!.minute,
               ),
               notes: _notesController.text,
+              price: student.price,
             ),
           );
         }
@@ -193,6 +195,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
           endTime: lessonEndTime,
           isPaid: widget.lessonToEdit!.isPaid,
           notes: _notesController.text,
+          price: student.price,
         );
         await database.updateLesson(lessonToUpdate);
       } else {
@@ -201,6 +204,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
           startTime: lessonStartTime,
           endTime: lessonEndTime,
           notes: _notesController.text,
+          price: student.price,
         );
         await database.insertLesson(newLesson);
       }

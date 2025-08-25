@@ -353,7 +353,8 @@ class _ClassesViewState extends State<ClassesView> {
               Color statusColor;
               Color priceColor;
               Color tileColor;
-              BoxBorder? border;
+              IconData icon;
+              Color iconBackgroundColor;
 
               if (isFuture) {
                 titleStatusText = 'Запланировано';
@@ -362,13 +363,15 @@ class _ClassesViewState extends State<ClassesView> {
                   statusColor = Colors.green;
                   priceColor = Colors.green;
                   tileColor = Colors.grey[200]!;
-                  border = Border.all(color: Colors.green, width: 2);
+                  icon = Icons.check_circle;
+                  iconBackgroundColor = Colors.green[100]!;
                 } else {
                   statusText = 'Не оплачен';
                   statusColor = Colors.grey;
                   priceColor = Colors.grey;
                   tileColor = Colors.grey[200]!;
-                  border = null;
+                  icon = Icons.watch_later;
+                  iconBackgroundColor = Colors.grey[300]!;
                 }
               } else {
                 titleStatusText = 'Состоялось';
@@ -377,38 +380,32 @@ class _ClassesViewState extends State<ClassesView> {
                   statusColor = Colors.green;
                   priceColor = Colors.grey;
                   tileColor = Colors.white;
-                  border = null;
+                  icon = Icons.check_circle;
+                  iconBackgroundColor = Colors.green[100]!;
                 } else {
                   statusText = 'Ожидает оплаты';
                   statusColor = Colors.orange;
                   priceColor = Colors.grey;
                   tileColor = Colors.white;
-                  border = null;
+                  icon = Icons.hourglass_bottom;
+                  iconBackgroundColor = Colors.orange[100]!;
                 }
               }
 
-              return Container(
-                margin: const EdgeInsets.symmetric(vertical: 4),
-                decoration: BoxDecoration(
-                  color: tileColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: border,
-                ),
+              return Material(
+                color: tileColor,
+                borderRadius: BorderRadius.circular(12),
                 child: ListTile(
+                  leading: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: iconBackgroundColor,
+                    child: Icon(icon, color: statusColor, size: 22),
+                  ),
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   title: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        titleStatusText,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: statusColor,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
                       Text(
                         lessonDate,
                         style: const TextStyle(
@@ -426,12 +423,27 @@ class _ClassesViewState extends State<ClassesView> {
                       ),
                     ],
                   ),
-                  subtitle: Text(
-                    statusText,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: statusColor,
-                    ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 4),
+                      Text(
+                        titleStatusText,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        statusText,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: statusColor,
+                        ),
+                      ),
+                    ],
                   ),
                   trailing: Text(
                     '$price руб.',

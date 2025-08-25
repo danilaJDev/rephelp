@@ -349,47 +349,69 @@ class _ClassesViewState extends State<ClassesView> {
               final price = (lesson['price'] as num).toStringAsFixed(0);
 
               String statusText;
+              String titleStatusText;
               Color statusColor;
+              Color priceColor;
               Color tileColor;
-              Color iconBackgroundColor;
               IconData icon;
+              Color iconBackgroundColor;
+              Color titleStatusColor;
+              Color iconColor;
 
               if (isFuture) {
-                statusText = 'Запланировано';
-                statusColor = Colors.grey;
-                tileColor = Colors.grey[200]!;
-                iconBackgroundColor = Colors.grey[300]!;
-                icon = Icons.watch_later;
-              } else if (isPaid) {
-                statusText = 'Оплачено';
-                statusColor = Colors.green;
-                tileColor = Colors.green[50]!;
-                iconBackgroundColor = Colors.green[100]!;
-                icon = Icons.check_circle;
+                titleStatusText = 'Запланировано';
+                titleStatusColor = Colors.grey;
+                if (isPaid) {
+                  statusText = 'Оплачено';
+                  statusColor = Colors.green;
+                  priceColor = Colors.green;
+                  tileColor = Colors.grey[200]!;
+                  icon = Icons.watch_later;
+                  iconBackgroundColor = Colors.grey[300]!;
+                  iconColor = Colors.grey;
+                } else {
+                  statusText = 'Не оплачен';
+                  statusColor = Colors.grey;
+                  priceColor = Colors.grey;
+                  tileColor = Colors.grey[200]!;
+                  icon = Icons.watch_later;
+                  iconBackgroundColor = Colors.grey[300]!;
+                  iconColor = Colors.grey;
+                }
               } else {
-                statusText = 'Ожидает оплаты';
-                statusColor = Colors.orange;
-                tileColor = Colors.orange[50]!;
-                iconBackgroundColor = Colors.orange[100]!;
-                icon = Icons.hourglass_bottom;
+                titleStatusText = 'Состоялось';
+                if (isPaid) {
+                  statusText = 'Оплачено';
+                  statusColor = Colors.green;
+                  priceColor = Colors.green;
+                  tileColor = Colors.green[50]!;
+                  icon = Icons.check_circle;
+                  iconBackgroundColor = Colors.green[100]!;
+                  titleStatusColor = Colors.green;
+                  iconColor = Colors.green;
+                } else {
+                  statusText = 'Ожидает оплаты';
+                  statusColor = Colors.orange;
+                  priceColor = Colors.orange;
+                  tileColor = Colors.orange[50]!;
+                  icon = Icons.hourglass_bottom;
+                  iconBackgroundColor = Colors.orange[100]!;
+                  titleStatusColor = Colors.orange;
+                  iconColor = Colors.orange;
+                }
               }
 
               return Material(
-                color: Colors.transparent,
+                color: tileColor,
+                borderRadius: BorderRadius.circular(12),
                 child: ListTile(
                   leading: CircleAvatar(
                     radius: 18,
                     backgroundColor: iconBackgroundColor,
-                    child: Icon(icon, color: statusColor, size: 22),
+                    child: Icon(icon, color: iconColor, size: 22),
                   ),
-                  tileColor: tileColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   title: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -410,27 +432,40 @@ class _ClassesViewState extends State<ClassesView> {
                       ),
                     ],
                   ),
-                  subtitle: Text(
-                    statusText,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: statusColor,
-                    ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 4),
+                      Text(
+                        titleStatusText,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: titleStatusColor,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        statusText,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: statusColor,
+                        ),
+                      ),
+                    ],
                   ),
                   trailing: Text(
                     '$price руб.',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                      color: statusColor,
+                      color: priceColor,
                     ),
                   ),
-                  onTap: isFuture
-                      ? null
-                      : () => _toggleLessonPaidStatus(
-                          lesson['id'] as int,
-                          isPaid,
-                        ),
+                  onTap: () => _toggleLessonPaidStatus(
+                    lesson['id'] as int,
+                    isPaid,
+                  ),
                 ),
               );
             }).toList(),

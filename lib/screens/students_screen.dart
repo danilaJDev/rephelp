@@ -169,12 +169,11 @@ class _StudentsScreenState extends State<StudentsScreen>
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(10.0),
+                  padding: const EdgeInsets.fromLTRB(15, 20, 15, 15),
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
                       hintText: 'Поиск ученика',
-                      hintStyle: const TextStyle(color: Colors.grey),
                       prefixIcon: const Icon(Icons.search),
                       filled: true,
                       fillColor: Colors.white,
@@ -211,13 +210,12 @@ class _StudentsScreenState extends State<StudentsScreen>
       );
     }
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 10.0),
       itemCount: students.length,
       itemBuilder: (context, index) {
         final student = students[index];
         return Card(
           color: Colors.white,
-          margin: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+          margin: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 4.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15.0),
           ),

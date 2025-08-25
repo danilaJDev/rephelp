@@ -249,7 +249,7 @@ class _ClassesViewState extends State<ClassesView> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: const EdgeInsets.fromLTRB(15,20,15,15),
       child: Row(
         children: [
           Expanded(
@@ -258,7 +258,7 @@ class _ClassesViewState extends State<ClassesView> {
               style: OutlinedButton.styleFrom(
                 backgroundColor: Colors.white,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 alignment: Alignment.centerLeft,
                 side: BorderSide(color: Colors.grey[300]!),
               ),
@@ -267,7 +267,7 @@ class _ClassesViewState extends State<ClassesView> {
                 children: [
                   Text('Все ученики',
                       style: TextStyle(fontSize: 16, color: Colors.black)),
-                  Icon(Icons.arrow_drop_down, color: Colors.black, size: 30),
+                  Icon(Icons.keyboard_arrow_down, color: Colors.black, size: 30),
                 ],
               ),
             ),
@@ -284,7 +284,7 @@ class _ClassesViewState extends State<ClassesView> {
               visualDensity: VisualDensity.compact,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Container(
             decoration: BoxDecoration(
               color: Colors.grey[200],
@@ -315,7 +315,6 @@ class _ClassesViewState extends State<ClassesView> {
     final studentNames = _groupedFinancialData.keys.toList();
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: studentNames.length,
       itemBuilder: (context, index) {
         final studentName = studentNames[index];

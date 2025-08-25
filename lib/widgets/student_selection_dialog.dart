@@ -37,6 +37,7 @@ class _StudentSelectionDialogState extends State<StudentSelectionDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Мои ученики', textAlign: TextAlign.center),
+      actionsAlignment: MainAxisAlignment.spaceBetween,
       content: SizedBox(
         width: double.maxFinite,
         child: _isLoading
@@ -53,6 +54,9 @@ class _StudentSelectionDialogState extends State<StudentSelectionDialog> {
                             _selectedIds.clear();
                           });
                         },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.deepPurple,
+                        ),
                         icon: const Icon(Icons.close),
                         label: const Text('Очистить все'),
                       ),
@@ -62,6 +66,9 @@ class _StudentSelectionDialogState extends State<StudentSelectionDialog> {
                             _selectedIds.addAll(_allStudents.map((s) => s.id!));
                           });
                         },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.deepPurple,
+                        ),
                         icon: const Icon(Icons.check_circle_outline),
                         label: const Text('Выбрать все'),
                       ),
@@ -69,70 +76,103 @@ class _StudentSelectionDialogState extends State<StudentSelectionDialog> {
                   ),
                   const Divider(),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: _allStudents.length,
-                      itemBuilder: (context, index) {
-                        final student = _allStudents[index];
-                        final isSelected = _selectedIds.contains(student.id);
+                    child: Container(
+                      color: Colors.grey[200],
+                      child: ListView.builder(
+                        itemCount: _allStudents.length,
+                        itemBuilder: (context, index) {
+                          final student = _allStudents[index];
+                          final isSelected = _selectedIds.contains(student.id);
 
-                        return ListTile(
-                          onTap: () {
-                            setState(() {
-                              if (isSelected) {
-                                _selectedIds.remove(student.id);
-                              } else {
-                                _selectedIds.add(student.id!);
-                              }
-                            });
-                          },
-                          leading: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                if (isSelected) {
-                                  _selectedIds.remove(student.id);
-                                } else {
-                                  _selectedIds.add(student.id!);
-                                }
-                              });
-                            },
-                            child: Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color:
-                                      isSelected ? Colors.green : Colors.grey,
-                                  width: 2,
-                                ),
-                                color: isSelected
-                                    ? Colors.green
-                                    : Colors.transparent,
-                              ),
-                              child: isSelected
-                                  ? const Icon(Icons.check,
-                                      color: Colors.white, size: 16)
-                                  : null,
+                          return Container(
+                            margin: const EdgeInsets.symmetric(
+                              vertical: 4,
+                              horizontal: 8,
                             ),
-                          ),
-                          title: Text(
-                              '${student.name} ${student.surname ?? ''}'),
-                        );
-                      },
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey[300]!,
+                                  blurRadius: 2,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: ListTile(
+                              onTap: () {
+                                setState(() {
+                                  if (isSelected) {
+                                    _selectedIds.remove(student.id);
+                                  } else {
+                                    _selectedIds.add(student.id!);
+                                  }
+                                });
+                              },
+                              leading: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    if (isSelected) {
+                                      _selectedIds.remove(student.id);
+                                    } else {
+                                      _selectedIds.add(student.id!);
+                                    }
+                                  });
+                                },
+                                child: Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? Colors.green
+                                          : Colors.grey,
+                                      width: 2,
+                                    ),
+                                    color: isSelected
+                                        ? Colors.green
+                                        : Colors.transparent,
+                                  ),
+                                  child: isSelected
+                                      ? const Icon(
+                                          Icons.check,
+                                          color: Colors.white,
+                                          size: 16,
+                                        )
+                                      : null,
+                                ),
+                              ),
+                              title: Text(
+                                '${student.name} ${student.surname ?? ''}',
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],
               ),
       ),
       actions: [
-        TextButton(
+        OutlinedButton(
           onPressed: () => Navigator.of(context).pop(),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Colors.deepPurple),
+            foregroundColor: Colors.deepPurple,
+          ),
           child: const Text('Отмена'),
         ),
         ElevatedButton(
           onPressed: () {
             Navigator.of(context).pop(_selectedIds.toList());
           },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.deepPurple,
+            foregroundColor: Colors.white,
+          ),
           child: const Text('Сохранить'),
         ),
       ],

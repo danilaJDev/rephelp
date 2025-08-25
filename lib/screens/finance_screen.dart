@@ -3,6 +3,7 @@ import 'package:rephelp/data/app_database.dart';
 import 'package:intl/intl.dart';
 import 'package:rephelp/screens/income_statistics_screen.dart';
 import 'package:rephelp/widgets/custom_app_bar.dart';
+import 'package:rephelp/widgets/student_selection_dialog.dart';
 
 class FinanceScreen extends StatefulWidget {
   const FinanceScreen({super.key});
@@ -91,11 +92,21 @@ class _ClassesViewState extends State<ClassesView> {
   double _totalEarned = 0.0;
   double _unpaidAmount = 0.0;
   bool _isLoading = true;
+  List<int>? _selectedStudentIds;
 
   @override
   void initState() {
     super.initState();
-    _loadFinancialData();
+    _initializeStudentFilter();
+  }
+
+  Future<void> _initializeStudentFilter() async {
+    final students = await _database.getStudents(isArchived: false);
+    if (!mounted) return;
+    setState(() {
+      _selectedStudentIds = students.map((s) => s.id!).toList();
+    });
+    await _loadFinancialData();
   }
 
   Future<void> _loadFinancialData({bool withSpinner = true}) async {
@@ -104,7 +115,29 @@ class _ClassesViewState extends State<ClassesView> {
       setState(() => _isLoading = true);
     }
 
-    var allLessons = await _database.getFinancialData();
+    // Don't load if the filter isn't initialized yet.
+    if (_selectedStudentIds == null) {
+      if (withSpinner) {
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+      }
+      return;
+    }
+
+    // If the filter is empty, clear the list and stop.
+    if (_selectedStudentIds!.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _groupedFinancialData = {};
+        _totalEarned = 0.0;
+        _unpaidAmount = 0.0;
+        _isLoading = false;
+      });
+      return;
+    }
+
+    var allLessons =
+        await _database.getFinancialData(studentIds: _selectedStudentIds);
     final now = DateTime.now();
     bool updated = false;
 
@@ -123,23 +156,23 @@ class _ClassesViewState extends State<ClassesView> {
       allLessons = await _database.getFinancialData();
     }
 
-    final pastLessons = allLessons.where((lesson) {
-      final endTime = DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
-      return endTime.isBefore(now);
-    }).toList();
-
     double total = 0.0;
     double unpaid = 0.0;
     Map<String, List<Map<String, dynamic>>> groupedData = {};
 
-    for (var lesson in pastLessons) {
-      final price = (lesson['price'] as num).toDouble();
-      final isPaid = lesson['is_paid'] == 1;
+    for (var lesson in allLessons) {
+      final endTime = DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
+      final isPast = endTime.isBefore(now);
 
-      if (isPaid) {
-        total += price;
-      } else {
-        unpaid += price;
+      if (isPast) {
+        final price = (lesson['price'] as num).toDouble();
+        final isPaid = lesson['is_paid'] == 1;
+
+        if (isPaid) {
+          total += price;
+        } else {
+          unpaid += price;
+        }
       }
 
       final studentName = '${lesson['name']} ${lesson['surname'] ?? ''}';
@@ -161,6 +194,44 @@ class _ClassesViewState extends State<ClassesView> {
     await _loadFinancialData(withSpinner: false);
   }
 
+  void _showNotImplementedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Функция в разработке'),
+          content: const Text('Эта функция скоро появится!'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _openStudentSelectionDialog() async {
+    if (_selectedStudentIds == null) return;
+
+    final selectedIds = await showDialog<List<int>>(
+      context: context,
+      builder: (context) {
+        return StudentSelectionDialog(
+          initialSelectedIds: _selectedStudentIds!,
+        );
+      },
+    );
+
+    if (selectedIds != null) {
+      setState(() {
+        _selectedStudentIds = selectedIds;
+      });
+      await _loadFinancialData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return _isLoading
@@ -169,68 +240,73 @@ class _ClassesViewState extends State<ClassesView> {
             onRefresh: () => _loadFinancialData(withSpinner: false),
             child: Column(
               children: [
-                _buildSummaryCard(),
+                _buildHeader(),
                 Expanded(child: _buildFinancialList()),
               ],
             ),
           );
   }
 
-  Widget _buildSummaryCard() {
-    return Card(
-      margin: const EdgeInsets.all(16.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildSummaryItem(
-              'Всего заработано',
-              '${_totalEarned.toStringAsFixed(0)} руб.',
-              Colors.green,
-              Icons.account_balance_wallet,
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: _openStudentSelectionDialog,
+              style: OutlinedButton.styleFrom(
+                backgroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                alignment: Alignment.centerLeft,
+                side: BorderSide(color: Colors.grey[300]!),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Все ученики',
+                      style: TextStyle(fontSize: 16, color: Colors.black)),
+                  Icon(Icons.arrow_drop_down, color: Colors.black, size: 30),
+                ],
+              ),
             ),
-            _buildSummaryItem(
-              'Ожидается оплата',
-              '${_unpaidAmount.toStringAsFixed(0)} руб.',
-              Colors.orange,
-              Icons.hourglass_bottom,
+          ),
+          const SizedBox(width: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              shape: BoxShape.circle,
             ),
-          ],
-        ),
+            child: IconButton(
+              onPressed: _showNotImplementedDialog,
+              icon: const Icon(Icons.view_agenda_outlined),
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              onPressed: _showNotImplementedDialog,
+              icon: const Icon(Icons.calendar_today_outlined),
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSummaryItem(
-    String title,
-    String value,
-    Color color,
-    IconData icon,
-  ) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 28),
-        const SizedBox(height: 8),
-        Text(title, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildFinancialList() {
     if (_groupedFinancialData.isEmpty) {
       return const Center(
         child: Text(
-          'Проведенных занятий пока нет',
+          'Занятий пока нет',
           style: TextStyle(fontSize: 16, color: Colors.grey),
         ),
       );
@@ -246,7 +322,7 @@ class _ClassesViewState extends State<ClassesView> {
         final lessons = _groupedFinancialData[studentName]!;
 
         lessons.sort(
-          (a, b) => (b['start_time'] as int).compareTo(a['start_time'] as int),
+          (a, b) => (a['start_time'] as int).compareTo(b['start_time'] as int),
         );
 
         return Card(
@@ -259,35 +335,57 @@ class _ClassesViewState extends State<ClassesView> {
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             children: lessons.map((lesson) {
-              final startTime = DateTime.fromMillisecondsSinceEpoch(
-                lesson['start_time'],
-              );
-              final endTime = DateTime.fromMillisecondsSinceEpoch(
-                lesson['end_time'],
-              );
+              final startTime =
+                  DateTime.fromMillisecondsSinceEpoch(lesson['start_time']);
+              final endTime =
+                  DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
               final isPaid = lesson['is_paid'] == 1;
+              final isFuture = DateTime.now().isBefore(endTime);
+
               final lessonDate = DateFormat.yMMMd('ru').format(startTime);
               final lessonTime =
                   '${DateFormat.Hm('ru').format(startTime)} - ${DateFormat.Hm('ru').format(endTime)}';
               final price = (lesson['price'] as num).toStringAsFixed(0);
 
-              final statusText = isPaid ? 'Оплачено' : 'Ожидает оплаты';
-              final statusColor = isPaid ? Colors.green : Colors.red;
+              String statusText;
+              Color statusColor;
+              Color tileColor;
+              Color iconBackgroundColor;
+              IconData icon;
+
+              if (isFuture) {
+                statusText = 'Запланировано';
+                statusColor = Colors.grey;
+                tileColor = Colors.grey[200]!;
+                iconBackgroundColor = Colors.grey[300]!;
+                icon = Icons.watch_later;
+              } else if (isPaid) {
+                statusText = 'Оплачено';
+                statusColor = Colors.green;
+                tileColor = Colors.green[50]!;
+                iconBackgroundColor = Colors.green[100]!;
+                icon = Icons.check_circle;
+              } else {
+                statusText = 'Ожидает оплаты';
+                statusColor = Colors.orange;
+                tileColor = Colors.orange[50]!;
+                iconBackgroundColor = Colors.orange[100]!;
+                icon = Icons.hourglass_bottom;
+              }
 
               return Material(
                 color: Colors.transparent,
                 child: ListTile(
                   leading: CircleAvatar(
                     radius: 18,
-                    backgroundColor:
-                        isPaid ? Colors.green[100] : Colors.orange[100],
+                    backgroundColor: iconBackgroundColor,
                     child: Icon(
-                      isPaid ? Icons.check_circle : Icons.hourglass_bottom,
-                      color: isPaid ? Colors.green : Colors.orange,
+                      icon,
+                      color: statusColor,
                       size: 22,
                     ),
                   ),
-                  tileColor: isPaid ? Colors.green[50] : Colors.orange[50],
+                  tileColor: tileColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -330,9 +428,10 @@ class _ClassesViewState extends State<ClassesView> {
                       color: statusColor,
                     ),
                   ),
-                  onTap: () {
-                    _toggleLessonPaidStatus(lesson['id'] as int, isPaid);
-                  },
+                  onTap: isFuture
+                      ? null
+                      : () =>
+                          _toggleLessonPaidStatus(lesson['id'] as int, isPaid),
                 ),
               );
             }).toList(),

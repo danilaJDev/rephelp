@@ -355,9 +355,11 @@ class _ClassesViewState extends State<ClassesView> {
               Color tileColor;
               IconData icon;
               Color iconBackgroundColor;
+              Color titleStatusColor;
 
               if (isFuture) {
                 titleStatusText = 'Запланировано';
+                titleStatusColor = Colors.grey;
                 if (isPaid) {
                   statusText = 'Оплачено';
                   statusColor = Colors.green;
@@ -378,17 +380,19 @@ class _ClassesViewState extends State<ClassesView> {
                 if (isPaid) {
                   statusText = 'Оплачено';
                   statusColor = Colors.green;
-                  priceColor = Colors.grey;
-                  tileColor = Colors.white;
+                  priceColor = Colors.green;
+                  tileColor = Colors.green[50]!;
                   icon = Icons.check_circle;
                   iconBackgroundColor = Colors.green[100]!;
+                  titleStatusColor = Colors.green;
                 } else {
                   statusText = 'Ожидает оплаты';
                   statusColor = Colors.orange;
-                  priceColor = Colors.grey;
-                  tileColor = Colors.white;
+                  priceColor = Colors.orange;
+                  tileColor = Colors.orange[50]!;
                   icon = Icons.hourglass_bottom;
                   iconBackgroundColor = Colors.orange[100]!;
+                  titleStatusColor = Colors.orange;
                 }
               }
 
@@ -429,9 +433,9 @@ class _ClassesViewState extends State<ClassesView> {
                       const SizedBox(height: 4),
                       Text(
                         titleStatusText,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey,
+                          color: titleStatusColor,
                           fontSize: 14,
                         ),
                       ),
@@ -453,10 +457,12 @@ class _ClassesViewState extends State<ClassesView> {
                       color: priceColor,
                     ),
                   ),
-                  onTap: () => _toggleLessonPaidStatus(
-                    lesson['id'] as int,
-                    isPaid,
-                  ),
+                  onTap: isFuture
+                      ? null
+                      : () => _toggleLessonPaidStatus(
+                          lesson['id'] as int,
+                          isPaid,
+                        ),
                 ),
               );
             }).toList(),

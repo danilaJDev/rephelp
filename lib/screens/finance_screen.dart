@@ -80,8 +80,7 @@ class ClassesView extends StatefulWidget {
 class _ClassesViewState extends State<ClassesView> {
   final AppDatabase _database = AppDatabase();
   Map<String, List<Map<String, dynamic>>> _groupedFinancialData = {};
-  double _totalEarned = 0.0;
-  double _unpaidAmount = 0.0;
+  
   bool _isLoading = true;
   List<int>? _selectedStudentIds;
 
@@ -120,8 +119,7 @@ class _ClassesViewState extends State<ClassesView> {
       if (!mounted) return;
       setState(() {
         _groupedFinancialData = {};
-        _totalEarned = 0.0;
-        _unpaidAmount = 0.0;
+    
         _isLoading = false;
       });
       return;
@@ -148,25 +146,10 @@ class _ClassesViewState extends State<ClassesView> {
       allLessons = await _database.getFinancialData();
     }
 
-    double total = 0.0;
-    double unpaid = 0.0;
+ 
     Map<String, List<Map<String, dynamic>>> groupedData = {};
 
     for (var lesson in allLessons) {
-      final endTime = DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
-      final isPast = endTime.isBefore(now);
-
-      if (isPast) {
-        final price = (lesson['price'] as num).toDouble();
-        final isPaid = lesson['is_paid'] == 1;
-
-        if (isPaid) {
-          total += price;
-        } else {
-          unpaid += price;
-        }
-      }
-
       final studentName = '${lesson['name']} ${lesson['surname'] ?? ''}';
       groupedData.putIfAbsent(studentName, () => []).add(lesson);
     }
@@ -174,8 +157,7 @@ class _ClassesViewState extends State<ClassesView> {
     if (!mounted) return;
     setState(() {
       _groupedFinancialData = groupedData;
-      _totalEarned = total;
-      _unpaidAmount = unpaid;
+      
       if (withSpinner) _isLoading = false;
     });
   }

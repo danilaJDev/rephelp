@@ -124,7 +124,8 @@ class AppDatabase {
     }
     if (oldVersion < 7) {
       await db.execute(
-          'ALTER TABLE lessons ADD COLUMN is_homework_sent INTEGER NOT NULL DEFAULT 0');
+        'ALTER TABLE lessons ADD COLUMN is_homework_sent INTEGER NOT NULL DEFAULT 0',
+      );
     }
   }
 

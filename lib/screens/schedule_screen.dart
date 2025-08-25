@@ -256,7 +256,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   Widget _buildLessonCard(
     Lesson lesson,
     Student student, {
-    String source = 'list', // "list" или "calendar"
+    String source = 'list',
   }) {
     final startTime = DateFormat('HH:mm').format(lesson.startTime);
     final endTime = DateFormat('HH:mm').format(lesson.endTime);
@@ -317,6 +317,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           children: [
             if (isPast)
               Container(
+                width: 45,
+                height: 45,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
@@ -328,6 +330,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       : Colors.transparent,
                 ),
                 child: IconButton(
+                  padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   icon: Icon(
                     Icons.home,
@@ -339,16 +342,17 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               ),
             const SizedBox(width: 8),
 
-            // 👉 Логика по вкладкам
             if (source == 'list') ...[
               if (lesson.isHomeworkSent)
-                // 👁 скрыть
                 Container(
+                  width: 45,
+                  height: 45,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.grey, width: 2),
                   ),
                   child: IconButton(
+                    padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     icon: const Icon(
                       Icons.visibility_off,
@@ -363,13 +367,15 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   ),
                 )
               else
-                // ❌ отмена
                 Container(
+                  width: 45,
+                  height: 45,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.red, width: 2),
                   ),
                   child: IconButton(
+                    padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     icon: const Icon(Icons.close, color: Colors.red, size: 24),
                     onPressed: () => _showCancelOptionsDialog(lesson, student),
@@ -377,13 +383,15 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 ),
             ] else if (source == 'calendar') ...[
               if (!lesson.isHomeworkSent)
-                // ❌ крестик только если ДЗ не отправлено
                 Container(
+                  width: 45,
+                  height: 45,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.red, width: 2),
                   ),
                   child: IconButton(
+                    padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     icon: const Icon(Icons.close, color: Colors.red, size: 24),
                     onPressed: () => _showCancelOptionsDialog(lesson, student),
@@ -401,7 +409,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Домашнее задание', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text(
+            'Домашнее задание',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: Text(
             'Отметить домашнее задание как ${lesson.isHomeworkSent ? 'неотправленное' : 'отправленное'}?',
           ),
@@ -619,7 +630,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 final endTime = DateFormat('HH:mm').format(lesson.endTime);
                 final timeRange = '$startTime-$endTime';
 
-                // Format student name
                 String studentDisplayName = student.name;
                 if (student.surname != null && student.surname!.isNotEmpty) {
                   studentDisplayName += ' ${student.surname![0]}.';

@@ -385,7 +385,10 @@ class _ClassesViewState extends State<ClassesView> {
               }
 
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 5,
+                  horizontal: 10,
+                ),
                 child: Material(
                   color: tileColor,
                   borderRadius: BorderRadius.circular(10),
@@ -395,9 +398,7 @@ class _ClassesViewState extends State<ClassesView> {
                       backgroundColor: iconBackgroundColor,
                       child: Icon(icon, color: iconColor, size: 22),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                     title: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

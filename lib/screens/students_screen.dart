@@ -220,7 +220,7 @@ class _StudentsScreenState extends State<StudentsScreen>
             borderRadius: BorderRadius.circular(15.0),
           ),
           child: ListTile(
-            leading: CircleAvatar(
+            leading: const CircleAvatar(
               backgroundColor: Colors.deepPurple,
               child: Icon(Icons.person, color: Colors.white),
             ),
@@ -232,23 +232,29 @@ class _StudentsScreenState extends State<StudentsScreen>
               ),
             ),
             onTap: () => _editStudent(student),
-            trailing: IconButton(
-              icon: const Icon(Icons.more_vert, color: Colors.deepPurple),
-              onPressed: () {
-                if (isArchived) {
-                  _showArchiveMenu(context, student);
-                } else {
-                  _showActiveMenu(context, student);
-                }
-              },
-            ),
+            trailing: isArchived
+                ? IconButton(
+                    icon: const Icon(Icons.more_vert, color: Colors.deepPurple),
+                    onPressed: () => _showArchiveMenu(context, student),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.archive, color: Colors.orange),
+                        onPressed: () {
+                          _showArchiveConfirmationDialog(context, student);
+                        },
+                      ),
+                    ],
+                  ),
           ),
         );
       },
     );
   }
 
-  void _showActiveMenu(BuildContext context, Student student) {
+  void _showArchiveConfirmationDialog(BuildContext context, Student student) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -256,43 +262,44 @@ class _StudentsScreenState extends State<StudentsScreen>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: Center(
-            child: Column(
+          title: const Text(
+            'Архивация ученика',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          content: RichText(
+            text: TextSpan(
+              style: DefaultTextStyle.of(context).style,
               children: [
-                const Icon(Icons.person, size: 30),
-                const SizedBox(height: 10),
-                Text('${student.name} ${student.surname ?? ''}'),
+                TextSpan(text: 'Перенести'),
+                const TextSpan(text: ' '),
+                TextSpan(
+                  text: student.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const TextSpan(text: ' '),
+                TextSpan(
+                  text: student.surname != null && student.surname!.isNotEmpty
+                      ? '${student.surname![0]}.'
+                      : '',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const TextSpan(text: ' в архив?'),
               ],
             ),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: const Text('Редактировать'),
-                iconColor: Colors.blue,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _editStudent(student);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.archive),
-                iconColor: Colors.orange,
-                title: const Text('Архивировать'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _toggleArchiveStatus(student.id!, true);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.cancel),
-                title: const Text('Закрыть'),
-                onTap: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Отмена'),
+            ),
+            TextButton(
+              onPressed: () {
+                _toggleArchiveStatus(student.id!, true);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Подтвердить'),
+            ),
+          ],
         );
       },
     );

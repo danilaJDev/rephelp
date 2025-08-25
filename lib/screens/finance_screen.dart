@@ -349,50 +349,66 @@ class _ClassesViewState extends State<ClassesView> {
               final price = (lesson['price'] as num).toStringAsFixed(0);
 
               String statusText;
+              String titleStatusText;
               Color statusColor;
+              Color priceColor;
               Color tileColor;
-              Color iconBackgroundColor;
-              IconData icon;
+              BoxBorder? border;
 
               if (isFuture) {
-                statusText = 'Запланировано';
-                statusColor = Colors.grey;
-                tileColor = Colors.grey[200]!;
-                iconBackgroundColor = Colors.grey[300]!;
-                icon = Icons.watch_later;
-              } else if (isPaid) {
-                statusText = 'Оплачено';
-                statusColor = Colors.green;
-                tileColor = Colors.green[50]!;
-                iconBackgroundColor = Colors.green[100]!;
-                icon = Icons.check_circle;
+                titleStatusText = 'Запланировано';
+                if (isPaid) {
+                  statusText = 'Оплачено';
+                  statusColor = Colors.green;
+                  priceColor = Colors.green;
+                  tileColor = Colors.grey[200]!;
+                  border = Border.all(color: Colors.green, width: 2);
+                } else {
+                  statusText = 'Не оплачен';
+                  statusColor = Colors.grey;
+                  priceColor = Colors.grey;
+                  tileColor = Colors.grey[200]!;
+                  border = null;
+                }
               } else {
-                statusText = 'Ожидает оплаты';
-                statusColor = Colors.orange;
-                tileColor = Colors.orange[50]!;
-                iconBackgroundColor = Colors.orange[100]!;
-                icon = Icons.hourglass_bottom;
+                titleStatusText = 'Состоялось';
+                if (isPaid) {
+                  statusText = 'Оплачено';
+                  statusColor = Colors.green;
+                  priceColor = Colors.grey;
+                  tileColor = Colors.white;
+                  border = null;
+                } else {
+                  statusText = 'Ожидает оплаты';
+                  statusColor = Colors.orange;
+                  priceColor = Colors.grey;
+                  tileColor = Colors.white;
+                  border = null;
+                }
               }
 
-              return Material(
-                color: Colors.transparent,
+              return Container(
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                decoration: BoxDecoration(
+                  color: tileColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: border,
+                ),
                 child: ListTile(
-                  leading: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: iconBackgroundColor,
-                    child: Icon(icon, color: statusColor, size: 22),
-                  ),
-                  tileColor: tileColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   title: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(
+                        titleStatusText,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: statusColor,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
                       Text(
                         lessonDate,
                         style: const TextStyle(
@@ -422,15 +438,13 @@ class _ClassesViewState extends State<ClassesView> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                      color: statusColor,
+                      color: priceColor,
                     ),
                   ),
-                  onTap: isFuture
-                      ? null
-                      : () => _toggleLessonPaidStatus(
-                          lesson['id'] as int,
-                          isPaid,
-                        ),
+                  onTap: () => _toggleLessonPaidStatus(
+                    lesson['id'] as int,
+                    isPaid,
+                  ),
                 ),
               );
             }).toList(),

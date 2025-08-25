@@ -366,7 +366,7 @@ class _ClassesViewState extends State<ClassesView> {
                   statusColor = Colors.green;
                   priceColor = Colors.green;
                   tileColor = Colors.grey[200]!;
-                  icon = Icons.check_circle;
+                  icon = Icons.watch_later;
                   iconBackgroundColor = Colors.grey[300]!;
                   iconColor = Colors.grey;
                 } else {

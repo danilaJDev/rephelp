@@ -83,6 +83,8 @@ class _ClassesViewState extends State<ClassesView> {
 
   bool _isLoading = true;
   List<int>? _selectedStudentIds;
+  String _viewMode = 'all';
+  DateTime? _selectedDate;
 
   @override
   void initState() {
@@ -165,22 +167,121 @@ class _ClassesViewState extends State<ClassesView> {
     await _loadFinancialData(withSpinner: false);
   }
 
-  void _showNotImplementedDialog() {
+  void _showViewAgendaDialog() {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Функция в разработке'),
-          content: const Text('Эта функция скоро появится!'),
+          title: const Center(
+            child: Text(
+              'Вид экрана',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('Только оплаченные'),
+                onTap: () {
+                  setState(() {
+                    _viewMode = 'paid';
+                  });
+                  Navigator.of(context).pop();
+                  _loadFinancialData();
+                },
+              ),
+              ListTile(
+                title: const Text('Только неоплаченные'),
+                onTap: () {
+                  setState(() {
+                    _viewMode = 'unpaid';
+                  });
+                  Navigator.of(context).pop();
+                  _loadFinancialData();
+                },
+              ),
+            ],
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 20,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  'Отмена',
+                  style: TextStyle(color: Colors.black),
+                ),
+              ),
             ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _showCalendarDialog() async {
+    final selectedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      helpText: 'ВЫБЕРИТЕ ДАТУ',
+      cancelText: 'ОТМЕНА',
+      confirmText: 'ВЫБРАТЬ',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            datePickerTheme: DatePickerThemeData(
+              headerHeadlineStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+              cancelButtonStyle: OutlinedButton.styleFrom(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                side: const BorderSide(color: Colors.grey),
+              ),
+              confirmButtonStyle: FilledButton.styleFrom(
+                backgroundColor: Colors.deepPurple,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+              ),
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                minimumSize: const Size(100, 30),
+                alignment: Alignment.center,
+              ),
+            ),
+          ),
+          child: Center(child: child),
+        );
+      },
+    );
+
+    if (selectedDate != null) {
+      setState(() {
+        _selectedDate = selectedDate;
+      });
+      await _loadFinancialData();
+    } else if (_selectedDate != null) {
+      setState(() {
+        _selectedDate = null;
+      });
+      await _loadFinancialData();
+    }
   }
 
   Future<void> _openStudentSelectionDialog() async {
@@ -259,7 +360,7 @@ class _ClassesViewState extends State<ClassesView> {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              onPressed: _showNotImplementedDialog,
+              onPressed: _showViewAgendaDialog,
               icon: const Icon(Icons.view_agenda_outlined),
               visualDensity: VisualDensity.compact,
             ),
@@ -271,7 +372,7 @@ class _ClassesViewState extends State<ClassesView> {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              onPressed: _showNotImplementedDialog,
+              onPressed: _showCalendarDialog,
               icon: const Icon(Icons.calendar_today_outlined),
               visualDensity: VisualDensity.compact,
             ),
@@ -291,13 +392,54 @@ class _ClassesViewState extends State<ClassesView> {
       );
     }
 
-    final studentNames = _groupedFinancialData.keys.toList();
+    Map<String, List<Map<String, dynamic>>> filteredData = {};
+
+    _groupedFinancialData.forEach((studentName, lessons) {
+      final filteredLessons = lessons.where((lesson) {
+        final isPaid = lesson['is_paid'] == 1;
+        final lessonDate = DateTime.fromMillisecondsSinceEpoch(
+          lesson['start_time'],
+        );
+
+        bool viewModeFilter = true;
+        if (_viewMode == 'paid') {
+          viewModeFilter = isPaid;
+        } else if (_viewMode == 'unpaid') {
+          viewModeFilter = !isPaid;
+        }
+
+        bool dateFilter = true;
+        if (_selectedDate != null) {
+          dateFilter =
+              lessonDate.year == _selectedDate!.year &&
+              lessonDate.month == _selectedDate!.month &&
+              lessonDate.day == _selectedDate!.day;
+        }
+
+        return viewModeFilter && dateFilter;
+      }).toList();
+
+      if (filteredLessons.isNotEmpty) {
+        filteredData[studentName] = filteredLessons;
+      }
+    });
+
+    if (filteredData.isEmpty) {
+      return const Center(
+        child: Text(
+          'Нет занятий, соответствующих фильтрам',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
+
+    final studentNames = filteredData.keys.toList();
 
     return ListView.builder(
       itemCount: studentNames.length,
       itemBuilder: (context, index) {
         final studentName = studentNames[index];
-        final lessons = _groupedFinancialData[studentName]!;
+        final lessons = filteredData[studentName]!;
 
         lessons.sort(
           (a, b) => (a['start_time'] as int).compareTo(b['start_time'] as int),

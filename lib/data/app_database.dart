@@ -322,8 +322,9 @@ class AppDatabase {
     );
   }
 
-  Future<List<Map<String, dynamic>>> getFinancialData(
-      {List<int>? studentIds}) async {
+  Future<List<Map<String, dynamic>>> getFinancialData({
+    List<int>? studentIds,
+  }) async {
     final db = await database;
     String query = '''
     SELECT

@@ -50,14 +50,8 @@ class _FinanceScreenState extends State<FinanceScreen>
             child: TabBar(
               controller: _tabController,
               tabs: const [
-                Tab(
-                  icon: Icon(Icons.payment),
-                  text: 'Занятия',
-                ),
-                Tab(
-                  icon: Icon(Icons.bar_chart),
-                  text: 'Статистика',
-                ),
+                Tab(icon: Icon(Icons.payment), text: 'Занятия'),
+                Tab(icon: Icon(Icons.bar_chart), text: 'Статистика'),
               ],
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white70,
@@ -67,10 +61,7 @@ class _FinanceScreenState extends State<FinanceScreen>
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: const [
-                ClassesView(),
-                IncomeStatisticsScreen(),
-              ],
+              children: const [ClassesView(), IncomeStatisticsScreen()],
             ),
           ),
         ],
@@ -136,8 +127,9 @@ class _ClassesViewState extends State<ClassesView> {
       return;
     }
 
-    var allLessons =
-        await _database.getFinancialData(studentIds: _selectedStudentIds);
+    var allLessons = await _database.getFinancialData(
+      studentIds: _selectedStudentIds,
+    );
     final now = DateTime.now();
     bool updated = false;
 
@@ -218,9 +210,7 @@ class _ClassesViewState extends State<ClassesView> {
     final selectedIds = await showDialog<List<int>>(
       context: context,
       builder: (context) {
-        return StudentSelectionDialog(
-          initialSelectedIds: _selectedStudentIds!,
-        );
+        return StudentSelectionDialog(initialSelectedIds: _selectedStudentIds!);
       },
     );
 
@@ -249,7 +239,7 @@ class _ClassesViewState extends State<ClassesView> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(15,20,15,15),
+      padding: const EdgeInsets.fromLTRB(15, 20, 15, 15),
       child: Row(
         children: [
           Expanded(
@@ -257,17 +247,28 @@ class _ClassesViewState extends State<ClassesView> {
               onPressed: _openStudentSelectionDialog,
               style: OutlinedButton.styleFrom(
                 backgroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 alignment: Alignment.centerLeft,
                 side: BorderSide(color: Colors.grey[300]!),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Все ученики',
-                      style: TextStyle(fontSize: 16, color: Colors.black)),
-                  Icon(Icons.keyboard_arrow_down, color: Colors.black, size: 30),
+                  Text(
+                    'Все ученики',
+                    style: TextStyle(fontSize: 16, color: Colors.black),
+                  ),
+                  Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Colors.black,
+                    size: 30,
+                  ),
                 ],
               ),
             ),
@@ -301,7 +302,6 @@ class _ClassesViewState extends State<ClassesView> {
     );
   }
 
-
   Widget _buildFinancialList() {
     if (_groupedFinancialData.isEmpty) {
       return const Center(
@@ -334,10 +334,12 @@ class _ClassesViewState extends State<ClassesView> {
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             children: lessons.map((lesson) {
-              final startTime =
-                  DateTime.fromMillisecondsSinceEpoch(lesson['start_time']);
-              final endTime =
-                  DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
+              final startTime = DateTime.fromMillisecondsSinceEpoch(
+                lesson['start_time'],
+              );
+              final endTime = DateTime.fromMillisecondsSinceEpoch(
+                lesson['end_time'],
+              );
               final isPaid = lesson['is_paid'] == 1;
               final isFuture = DateTime.now().isBefore(endTime);
 
@@ -378,11 +380,7 @@ class _ClassesViewState extends State<ClassesView> {
                   leading: CircleAvatar(
                     radius: 18,
                     backgroundColor: iconBackgroundColor,
-                    child: Icon(
-                      icon,
-                      color: statusColor,
-                      size: 22,
-                    ),
+                    child: Icon(icon, color: statusColor, size: 22),
                   ),
                   tileColor: tileColor,
                   shape: RoundedRectangleBorder(
@@ -429,8 +427,10 @@ class _ClassesViewState extends State<ClassesView> {
                   ),
                   onTap: isFuture
                       ? null
-                      : () =>
-                          _toggleLessonPaidStatus(lesson['id'] as int, isPaid),
+                      : () => _toggleLessonPaidStatus(
+                          lesson['id'] as int,
+                          isPaid,
+                        ),
                 ),
               );
             }).toList(),

@@ -36,9 +36,7 @@ class _StudentSelectionDialogState extends State<StudentSelectionDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
       insetPadding: const EdgeInsets.all(20),
       child: ConstrainedBox(
         constraints: BoxConstraints(
@@ -52,10 +50,7 @@ class _StudentSelectionDialogState extends State<StudentSelectionDialog> {
               const Text(
                 'Мои ученики',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               if (_isLoading)
@@ -123,8 +118,9 @@ class _StudentSelectionDialogState extends State<StudentSelectionDialog> {
                               ],
                             ),
                             child: ListTile(
-                              contentPadding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -154,12 +150,12 @@ class _StudentSelectionDialogState extends State<StudentSelectionDialog> {
                                     shape: BoxShape.circle,
                                     border: Border.all(
                                       color: isSelected
-                                          ? Colors.green
+                                          ? Colors.deepPurple
                                           : Colors.grey.shade400,
                                       width: 2.5,
                                     ),
                                     color: isSelected
-                                        ? Colors.green
+                                        ? Colors.deepPurple
                                         : Colors.transparent,
                                   ),
                                   child: isSelected

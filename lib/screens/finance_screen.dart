@@ -356,6 +356,7 @@ class _ClassesViewState extends State<ClassesView> {
               IconData icon;
               Color iconBackgroundColor;
               Color titleStatusColor;
+              Color iconColor;
 
               if (isFuture) {
                 titleStatusText = 'Запланировано';
@@ -366,7 +367,8 @@ class _ClassesViewState extends State<ClassesView> {
                   priceColor = Colors.green;
                   tileColor = Colors.grey[200]!;
                   icon = Icons.check_circle;
-                  iconBackgroundColor = Colors.green[100]!;
+                  iconBackgroundColor = Colors.grey[300]!;
+                  iconColor = Colors.grey;
                 } else {
                   statusText = 'Не оплачен';
                   statusColor = Colors.grey;
@@ -374,6 +376,7 @@ class _ClassesViewState extends State<ClassesView> {
                   tileColor = Colors.grey[200]!;
                   icon = Icons.watch_later;
                   iconBackgroundColor = Colors.grey[300]!;
+                  iconColor = Colors.grey;
                 }
               } else {
                 titleStatusText = 'Состоялось';
@@ -385,6 +388,7 @@ class _ClassesViewState extends State<ClassesView> {
                   icon = Icons.check_circle;
                   iconBackgroundColor = Colors.green[100]!;
                   titleStatusColor = Colors.green;
+                  iconColor = Colors.green;
                 } else {
                   statusText = 'Ожидает оплаты';
                   statusColor = Colors.orange;
@@ -393,6 +397,7 @@ class _ClassesViewState extends State<ClassesView> {
                   icon = Icons.hourglass_bottom;
                   iconBackgroundColor = Colors.orange[100]!;
                   titleStatusColor = Colors.orange;
+                  iconColor = Colors.orange;
                 }
               }
 
@@ -403,7 +408,7 @@ class _ClassesViewState extends State<ClassesView> {
                   leading: CircleAvatar(
                     radius: 18,
                     backgroundColor: iconBackgroundColor,
-                    child: Icon(icon, color: statusColor, size: 22),
+                    child: Icon(icon, color: iconColor, size: 22),
                   ),
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -457,12 +462,10 @@ class _ClassesViewState extends State<ClassesView> {
                       color: priceColor,
                     ),
                   ),
-                  onTap: isFuture
-                      ? null
-                      : () => _toggleLessonPaidStatus(
-                          lesson['id'] as int,
-                          isPaid,
-                        ),
+                  onTap: () => _toggleLessonPaidStatus(
+                    lesson['id'] as int,
+                    isPaid,
+                  ),
                 ),
               );
             }).toList(),

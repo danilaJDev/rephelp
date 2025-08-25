@@ -250,6 +250,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     final endTime = DateFormat('HH:mm').format(lesson.endTime);
     final studentName = '${student.name} ${student.surname ?? ''}';
     final hasNotes = lesson.notes != null && lesson.notes!.isNotEmpty;
+    final isPast = lesson.endTime.isBefore(DateTime.now());
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -306,11 +307,71 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             ],
           ],
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.more_vert),
-          onPressed: () => _showLessonMenu(context, lesson, student),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isPast)
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: lesson.isHomeworkSent ? Colors.green : Colors.grey[300],
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.home, color: Colors.white),
+                  onPressed: () => _showHomeworkConfirmationDialog(lesson),
+                ),
+              ),
+            const SizedBox(width: 8),
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.grey[300],
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.red),
+                onPressed: () => _showCancelOptionsDialog(lesson, student),
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  void _showHomeworkConfirmationDialog(Lesson lesson) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Домашнее задание'),
+          content: Text(
+              'Вы уверены, что хотите отметить домашнее задание как ${lesson.isHomeworkSent ? 'неотправленное' : 'отправленное'}?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Отмена'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: const Text('Подтвердить'),
+              onPressed: () async {
+                final newLesson = Lesson(
+                  id: lesson.id,
+                  studentId: lesson.studentId,
+                  startTime: lesson.startTime,
+                  endTime: lesson.endTime,
+                  isPaid: lesson.isPaid,
+                  notes: lesson.notes,
+                  price: lesson.price,
+                  isHomeworkSent: !lesson.isHomeworkSent,
+                );
+                await _database.updateLesson(newLesson);
+                await _loadAllData();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 

@@ -12,6 +12,138 @@ class FinanceScreen extends StatefulWidget {
   State<FinanceScreen> createState() => _FinanceScreenState();
 }
 
+class _AnimatedFinanceDialog extends StatefulWidget {
+  final String initialViewMode;
+  final ValueChanged<String> onViewModeChanged;
+
+  const _AnimatedFinanceDialog({
+    required this.initialViewMode,
+    required this.onViewModeChanged,
+  });
+
+  @override
+  _AnimatedFinanceDialogState createState() => _AnimatedFinanceDialogState();
+}
+
+class _AnimatedFinanceDialogState extends State<_AnimatedFinanceDialog>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+  late String _tempViewMode;
+
+  @override
+  void initState() {
+    super.initState();
+    _tempViewMode = widget.initialViewMode;
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _scaleAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutBack,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _closeDialog() {
+    _controller.reverse().then((_) {
+      Navigator.of(context).pop();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AlertDialog(
+          title: const Center(
+            child: Text(
+              'Вид экрана',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          content: Theme(
+            data: Theme.of(
+              context,
+            ).copyWith(unselectedWidgetColor: Colors.deepPurple),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<String>(
+                  title: const Text('Только оплаченные'),
+                  value: 'paid',
+                  groupValue: _tempViewMode,
+                  onChanged: (String? value) {
+                    setState(() {
+                      _tempViewMode = value!;
+                    });
+                    widget.onViewModeChanged(_tempViewMode);
+                    _closeDialog();
+                  },
+                  activeColor: Colors.deepPurple,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                RadioListTile<String>(
+                  title: const Text('Только неоплаченные'),
+                  value: 'unpaid',
+                  groupValue: _tempViewMode,
+                  onChanged: (String? value) {
+                    setState(() {
+                      _tempViewMode = value!;
+                    });
+                    widget.onViewModeChanged(_tempViewMode);
+                    _closeDialog();
+                  },
+                  activeColor: Colors.deepPurple,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            if (_tempViewMode != 'all')
+              TextButton(
+                onPressed: () {
+                  widget.onViewModeChanged('all');
+                  _closeDialog();
+                },
+                child: const Text(
+                  'Сбросить',
+                  style: TextStyle(color: Colors.deepPurple),
+                ),
+              ),
+            TextButton(
+              onPressed: _closeDialog,
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.deepPurple),
+                foregroundColor: Colors.deepPurple,
+              ),
+              child: const Text('Отмена'),
+            ),
+          ],
+          actionsAlignment: MainAxisAlignment.center,
+        ),
+      ),
+    );
+  }
+}
+
 class _FinanceScreenState extends State<FinanceScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
@@ -170,58 +302,16 @@ class _ClassesViewState extends State<ClassesView> {
   void _showViewAgendaDialog() {
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Center(
-            child: Text(
-              'Вид экрана',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: const Text('Только оплаченные'),
-                onTap: () {
-                  setState(() {
-                    _viewMode = 'paid';
-                  });
-                  Navigator.of(context).pop();
-                  _loadFinancialData();
-                },
-              ),
-              ListTile(
-                title: const Text('Только неоплаченные'),
-                onTap: () {
-                  setState(() {
-                    _viewMode = 'unpaid';
-                  });
-                  Navigator.of(context).pop();
-                  _loadFinancialData();
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 10,
-                  horizontal: 20,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Text(
-                  'Отмена',
-                  style: TextStyle(color: Colors.black),
-                ),
-              ),
-            ),
-          ],
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return _AnimatedFinanceDialog(
+          initialViewMode: _viewMode,
+          onViewModeChanged: (String newViewMode) {
+            setState(() {
+              _viewMode = newViewMode;
+            });
+            _loadFinancialData();
+          },
         );
       },
     );

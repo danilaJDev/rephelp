@@ -123,23 +123,23 @@ class _ClassesViewState extends State<ClassesView> {
       allLessons = await _database.getFinancialData();
     }
 
-    final pastLessons = allLessons.where((lesson) {
-      final endTime = DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
-      return endTime.isBefore(now);
-    }).toList();
-
     double total = 0.0;
     double unpaid = 0.0;
     Map<String, List<Map<String, dynamic>>> groupedData = {};
 
-    for (var lesson in pastLessons) {
-      final price = (lesson['price'] as num).toDouble();
-      final isPaid = lesson['is_paid'] == 1;
+    for (var lesson in allLessons) {
+      final endTime = DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
+      final isPast = endTime.isBefore(now);
 
-      if (isPaid) {
-        total += price;
-      } else {
-        unpaid += price;
+      if (isPast) {
+        final price = (lesson['price'] as num).toDouble();
+        final isPaid = lesson['is_paid'] == 1;
+
+        if (isPaid) {
+          total += price;
+        } else {
+          unpaid += price;
+        }
       }
 
       final studentName = '${lesson['name']} ${lesson['surname'] ?? ''}';
@@ -230,7 +230,7 @@ class _ClassesViewState extends State<ClassesView> {
     if (_groupedFinancialData.isEmpty) {
       return const Center(
         child: Text(
-          'Проведенных занятий пока нет',
+          'Занятий пока нет',
           style: TextStyle(fontSize: 16, color: Colors.grey),
         ),
       );
@@ -259,35 +259,57 @@ class _ClassesViewState extends State<ClassesView> {
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             children: lessons.map((lesson) {
-              final startTime = DateTime.fromMillisecondsSinceEpoch(
-                lesson['start_time'],
-              );
-              final endTime = DateTime.fromMillisecondsSinceEpoch(
-                lesson['end_time'],
-              );
+              final startTime =
+                  DateTime.fromMillisecondsSinceEpoch(lesson['start_time']);
+              final endTime =
+                  DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
               final isPaid = lesson['is_paid'] == 1;
+              final isFuture = DateTime.now().isBefore(endTime);
+
               final lessonDate = DateFormat.yMMMd('ru').format(startTime);
               final lessonTime =
                   '${DateFormat.Hm('ru').format(startTime)} - ${DateFormat.Hm('ru').format(endTime)}';
               final price = (lesson['price'] as num).toStringAsFixed(0);
 
-              final statusText = isPaid ? 'Оплачено' : 'Ожидает оплаты';
-              final statusColor = isPaid ? Colors.green : Colors.red;
+              String statusText;
+              Color statusColor;
+              Color tileColor;
+              Color iconBackgroundColor;
+              IconData icon;
+
+              if (isFuture) {
+                statusText = 'Запланировано';
+                statusColor = Colors.grey;
+                tileColor = Colors.grey[200]!;
+                iconBackgroundColor = Colors.grey[300]!;
+                icon = Icons.watch_later;
+              } else if (isPaid) {
+                statusText = 'Оплачено';
+                statusColor = Colors.green;
+                tileColor = Colors.green[50]!;
+                iconBackgroundColor = Colors.green[100]!;
+                icon = Icons.check_circle;
+              } else {
+                statusText = 'Ожидает оплаты';
+                statusColor = Colors.orange;
+                tileColor = Colors.orange[50]!;
+                iconBackgroundColor = Colors.orange[100]!;
+                icon = Icons.hourglass_bottom;
+              }
 
               return Material(
                 color: Colors.transparent,
                 child: ListTile(
                   leading: CircleAvatar(
                     radius: 18,
-                    backgroundColor:
-                        isPaid ? Colors.green[100] : Colors.orange[100],
+                    backgroundColor: iconBackgroundColor,
                     child: Icon(
-                      isPaid ? Icons.check_circle : Icons.hourglass_bottom,
-                      color: isPaid ? Colors.green : Colors.orange,
+                      icon,
+                      color: statusColor,
                       size: 22,
                     ),
                   ),
-                  tileColor: isPaid ? Colors.green[50] : Colors.orange[50],
+                  tileColor: tileColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -330,9 +352,10 @@ class _ClassesViewState extends State<ClassesView> {
                       color: statusColor,
                     ),
                   ),
-                  onTap: () {
-                    _toggleLessonPaidStatus(lesson['id'] as int, isPaid);
-                  },
+                  onTap: isFuture
+                      ? null
+                      : () =>
+                          _toggleLessonPaidStatus(lesson['id'] as int, isPaid),
                 ),
               );
             }).toList(),

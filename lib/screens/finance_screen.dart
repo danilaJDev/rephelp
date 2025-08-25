@@ -161,6 +161,24 @@ class _ClassesViewState extends State<ClassesView> {
     await _loadFinancialData(withSpinner: false);
   }
 
+  void _showNotImplementedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Функция в разработке'),
+          content: const Text('Эта функция скоро появится!'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return _isLoading
@@ -169,62 +187,65 @@ class _ClassesViewState extends State<ClassesView> {
             onRefresh: () => _loadFinancialData(withSpinner: false),
             child: Column(
               children: [
-                _buildSummaryCard(),
+                _buildHeader(),
                 Expanded(child: _buildFinancialList()),
               ],
             ),
           );
   }
 
-  Widget _buildSummaryCard() {
-    return Card(
-      margin: const EdgeInsets.all(16.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildSummaryItem(
-              'Всего заработано',
-              '${_totalEarned.toStringAsFixed(0)} руб.',
-              Colors.green,
-              Icons.account_balance_wallet,
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: _showNotImplementedDialog,
+              style: OutlinedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                alignment: Alignment.centerLeft,
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Все ученики',
+                      style: TextStyle(fontSize: 16, color: Colors.black)),
+                  Icon(Icons.arrow_drop_down, color: Colors.black),
+                ],
+              ),
             ),
-            _buildSummaryItem(
-              'Ожидается оплата',
-              '${_unpaidAmount.toStringAsFixed(0)} руб.',
-              Colors.orange,
-              Icons.hourglass_bottom,
+          ),
+          const SizedBox(width: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              shape: BoxShape.circle,
             ),
-          ],
-        ),
+            child: IconButton(
+              onPressed: _showNotImplementedDialog,
+              icon: const Icon(Icons.view_agenda_outlined),
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              onPressed: _showNotImplementedDialog,
+              icon: const Icon(Icons.calendar_today_outlined),
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSummaryItem(
-    String title,
-    String value,
-    Color color,
-    IconData icon,
-  ) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 28),
-        const SizedBox(height: 8),
-        Text(title, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildFinancialList() {
     if (_groupedFinancialData.isEmpty) {
@@ -246,7 +267,7 @@ class _ClassesViewState extends State<ClassesView> {
         final lessons = _groupedFinancialData[studentName]!;
 
         lessons.sort(
-          (a, b) => (b['start_time'] as int).compareTo(a['start_time'] as int),
+          (a, b) => (a['start_time'] as int).compareTo(b['start_time'] as int),
         );
 
         return Card(

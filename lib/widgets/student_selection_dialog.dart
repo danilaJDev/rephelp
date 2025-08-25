@@ -35,50 +35,71 @@ class _StudentSelectionDialogState extends State<StudentSelectionDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Мои ученики', textAlign: TextAlign.center),
-      actionsAlignment: MainAxisAlignment.spaceBetween,
-      content: SizedBox(
-        width: double.maxFinite,
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _selectedIds.clear();
-                          });
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.deepPurple,
-                        ),
-                        icon: const Icon(Icons.close),
-                        label: const Text('Очистить все'),
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20.0),
+      ),
+      insetPadding: const EdgeInsets.all(20),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.6,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Мои ученики',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (_isLoading)
+                const Expanded(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _selectedIds.clear();
+                        });
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.deepPurple,
                       ),
-                      TextButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _selectedIds.addAll(_allStudents.map((s) => s.id!));
-                          });
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.deepPurple,
-                        ),
-                        icon: const Icon(Icons.check_circle_outline),
-                        label: const Text('Выбрать все'),
+                      icon: const Icon(Icons.close, size: 18),
+                      label: const Text('Очистить все'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _selectedIds.addAll(_allStudents.map((s) => s.id!));
+                        });
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.deepPurple,
                       ),
-                    ],
-                  ),
-                  const Divider(),
-                  Expanded(
+                      icon: const Icon(Icons.check_circle_outline, size: 18),
+                      label: const Text('Выбрать все'),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      color: Colors.grey[200],
+                      color: Colors.grey[100],
                       child: ListView.builder(
+                        shrinkWrap: true,
                         itemCount: _allStudents.length,
                         itemBuilder: (context, index) {
                           final student = _allStudents[index];
@@ -86,21 +107,27 @@ class _StudentSelectionDialogState extends State<StudentSelectionDialog> {
 
                           return Container(
                             margin: const EdgeInsets.symmetric(
-                              vertical: 4,
-                              horizontal: 8,
+                              vertical: 5,
+                              horizontal: 10,
                             ),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.grey[300]!,
-                                  blurRadius: 2,
-                                  offset: const Offset(0, 1),
+                                  color: Colors.grey.withOpacity(0.2),
+                                  spreadRadius: 1,
+                                  blurRadius: 3,
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
                             child: ListTile(
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                               onTap: () {
                                 setState(() {
                                   if (isSelected) {
@@ -121,15 +148,15 @@ class _StudentSelectionDialogState extends State<StudentSelectionDialog> {
                                   });
                                 },
                                 child: Container(
-                                  width: 24,
-                                  height: 24,
+                                  width: 26,
+                                  height: 26,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
                                       color: isSelected
                                           ? Colors.green
-                                          : Colors.grey,
-                                      width: 2,
+                                          : Colors.grey.shade400,
+                                      width: 2.5,
                                     ),
                                     color: isSelected
                                         ? Colors.green
@@ -139,13 +166,16 @@ class _StudentSelectionDialogState extends State<StudentSelectionDialog> {
                                       ? const Icon(
                                           Icons.check,
                                           color: Colors.white,
-                                          size: 16,
+                                          size: 18,
                                         )
                                       : null,
                                 ),
                               ),
                               title: Text(
                                 '${student.name} ${student.surname ?? ''}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           );
@@ -153,29 +183,51 @@ class _StudentSelectionDialogState extends State<StudentSelectionDialog> {
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.deepPurple),
+                            foregroundColor: Colors.deepPurple,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Отмена'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(_selectedIds.toList());
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Сохранить'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
-      actions: [
-        OutlinedButton(
-          onPressed: () => Navigator.of(context).pop(),
-          style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: Colors.deepPurple),
-            foregroundColor: Colors.deepPurple,
-          ),
-          child: const Text('Отмена'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.of(context).pop(_selectedIds.toList());
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.deepPurple,
-            foregroundColor: Colors.white,
-          ),
-          child: const Text('Сохранить'),
-        ),
-      ],
     );
   }
 }

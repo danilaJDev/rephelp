@@ -80,7 +80,7 @@ class ClassesView extends StatefulWidget {
 class _ClassesViewState extends State<ClassesView> {
   final AppDatabase _database = AppDatabase();
   Map<String, List<Map<String, dynamic>>> _groupedFinancialData = {};
-  
+
   bool _isLoading = true;
   List<int>? _selectedStudentIds;
 
@@ -105,7 +105,6 @@ class _ClassesViewState extends State<ClassesView> {
       setState(() => _isLoading = true);
     }
 
-    // Don't load if the filter isn't initialized yet.
     if (_selectedStudentIds == null) {
       if (withSpinner) {
         if (!mounted) return;
@@ -114,12 +113,11 @@ class _ClassesViewState extends State<ClassesView> {
       return;
     }
 
-    // If the filter is empty, clear the list and stop.
     if (_selectedStudentIds!.isEmpty) {
       if (!mounted) return;
       setState(() {
         _groupedFinancialData = {};
-    
+
         _isLoading = false;
       });
       return;
@@ -146,7 +144,6 @@ class _ClassesViewState extends State<ClassesView> {
       allLessons = await _database.getFinancialData();
     }
 
- 
     Map<String, List<Map<String, dynamic>>> groupedData = {};
 
     for (var lesson in allLessons) {
@@ -157,7 +154,7 @@ class _ClassesViewState extends State<ClassesView> {
     if (!mounted) return;
     setState(() {
       _groupedFinancialData = groupedData;
-      
+
       if (withSpinner) _isLoading = false;
     });
   }
@@ -392,8 +389,10 @@ class _ClassesViewState extends State<ClassesView> {
                     backgroundColor: iconBackgroundColor,
                     child: Icon(icon, color: iconColor, size: 22),
                   ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   title: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -444,10 +443,8 @@ class _ClassesViewState extends State<ClassesView> {
                       color: priceColor,
                     ),
                   ),
-                  onTap: () => _toggleLessonPaidStatus(
-                    lesson['id'] as int,
-                    isPaid,
-                  ),
+                  onTap: () =>
+                      _toggleLessonPaidStatus(lesson['id'] as int, isPaid),
                 ),
               );
             }).toList(),

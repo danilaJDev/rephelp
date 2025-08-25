@@ -24,6 +24,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   List<Student> _students = [];
   Map<DateTime, List<Map<String, dynamic>>> _allLessons = {};
   DateTime _focusedDateForTable = DateTime.now();
+  final Set<int> _hiddenLessons = {};
 
   @override
   void initState() {
@@ -211,12 +212,19 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       itemCount: sortedDays.length,
       itemBuilder: (context, index) {
         final day = sortedDays[index];
-        final lessons = _allLessons[day]!;
+        final lessons = _allLessons[day]!.where((lessonData) {
+          final lesson = lessonData['lesson'] as Lesson;
+          return !_hiddenLessons.contains(lesson.id);
+        }).toList();
+
+        if (lessons.isEmpty) return const SizedBox.shrink();
+
         lessons.sort(
           (a, b) => (a['lesson'] as Lesson).startTime.compareTo(
             (b['lesson'] as Lesson).startTime,
           ),
         );
+
         final formattedDate = DateFormat(
           'dd.MM.yyyy, EEEE',
           'ru_RU',
@@ -237,7 +245,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             ...lessons.map((lessonData) {
               final lesson = lessonData['lesson'] as Lesson;
               final student = lessonData['student'] as Student;
-              return _buildLessonCard(lesson, student);
+              return _buildLessonCard(lesson, student, source: 'list');
             }).toList(),
           ],
         );
@@ -245,7 +253,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     );
   }
 
-  Widget _buildLessonCard(Lesson lesson, Student student) {
+  Widget _buildLessonCard(
+    Lesson lesson,
+    Student student, {
+    String source = 'list', // "list" или "calendar"
+  }) {
     final startTime = DateFormat('HH:mm').format(lesson.startTime);
     final endTime = DateFormat('HH:mm').format(lesson.endTime);
     final studentName = '${student.name} ${student.surname ?? ''}';
@@ -260,7 +272,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         title: Text(
           '$startTime - $endTime',
           style: const TextStyle(
-            fontSize: 16,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
             color: Colors.deepPurple,
           ),
@@ -268,14 +280,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              studentName,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
+            Text(studentName, style: const TextStyle(fontSize: 16)),
             if (hasNotes) ...[
               const SizedBox(height: 6),
               Row(
@@ -314,24 +319,77 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: lesson.isHomeworkSent ? Colors.green : Colors.grey[300],
+                  border: Border.all(
+                    color: lesson.isHomeworkSent ? Colors.green : Colors.orange,
+                    width: 2,
+                  ),
+                  color: lesson.isHomeworkSent
+                      ? Colors.green
+                      : Colors.transparent,
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.home, color: Colors.white),
+                  constraints: const BoxConstraints(),
+                  icon: Icon(
+                    Icons.home,
+                    color: lesson.isHomeworkSent ? Colors.white : Colors.orange,
+                    size: 24,
+                  ),
                   onPressed: () => _showHomeworkConfirmationDialog(lesson),
                 ),
               ),
             const SizedBox(width: 8),
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.grey[300],
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.red),
-                onPressed: () => _showCancelOptionsDialog(lesson, student),
-              ),
-            ),
+
+            // 👉 Логика по вкладкам
+            if (source == 'list') ...[
+              if (lesson.isHomeworkSent)
+                // 👁 скрыть
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey, width: 2),
+                  ),
+                  child: IconButton(
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(
+                      Icons.visibility_off,
+                      color: Colors.grey,
+                      size: 24,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _hiddenLessons.add(lesson.id!);
+                      });
+                    },
+                  ),
+                )
+              else
+                // ❌ отмена
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.red, width: 2),
+                  ),
+                  child: IconButton(
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(Icons.close, color: Colors.red, size: 24),
+                    onPressed: () => _showCancelOptionsDialog(lesson, student),
+                  ),
+                ),
+            ] else if (source == 'calendar') ...[
+              if (!lesson.isHomeworkSent)
+                // ❌ крестик только если ДЗ не отправлено
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.red, width: 2),
+                  ),
+                  child: IconButton(
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(Icons.close, color: Colors.red, size: 24),
+                    onPressed: () => _showCancelOptionsDialog(lesson, student),
+                  ),
+                ),
+            ],
           ],
         ),
       ),
@@ -343,9 +401,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Домашнее задание'),
+          title: const Text('Домашнее задание', style: TextStyle(fontWeight: FontWeight.bold)),
           content: Text(
-              'Вы уверены, что хотите отметить домашнее задание как ${lesson.isHomeworkSent ? 'неотправленное' : 'отправленное'}?'),
+            'Отметить домашнее задание как ${lesson.isHomeworkSent ? 'неотправленное' : 'отправленное'}?',
+          ),
           actions: <Widget>[
             TextButton(
               child: const Text('Отмена'),
@@ -365,6 +424,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   isHomeworkSent: !lesson.isHomeworkSent,
                 );
                 await _database.updateLesson(newLesson);
+                if (!newLesson.isHomeworkSent) {
+                  setState(() {
+                    _hiddenLessons.remove(newLesson.id);
+                  });
+                }
                 await _loadAllData();
                 Navigator.of(context).pop();
               },
@@ -431,7 +495,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Отменить занятие'),
+          title: const Text('Отмена занятия'),
           content: const Text('Как вы хотите отменить занятие?'),
           actions: <Widget>[
             TextButton(
@@ -783,7 +847,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   itemBuilder: (context, index) {
                     final lesson = _lessons[index]['lesson'] as Lesson;
                     final student = _lessons[index]['student'] as Student;
-                    return _buildLessonCard(lesson, student);
+                    return _buildLessonCard(
+                      lesson,
+                      student,
+                      source: 'calendar',
+                    );
                   },
                 ),
         ),

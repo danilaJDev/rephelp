@@ -310,7 +310,11 @@ class _ClassesViewState extends State<ClassesView> {
             maintainState: true,
             title: Text(
               studentName,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Colors.deepPurple,
+              ),
             ),
             children: lessons.map((lesson) {
               final startTime = DateTime.fromMillisecondsSinceEpoch(
@@ -380,71 +384,64 @@ class _ClassesViewState extends State<ClassesView> {
                 }
               }
 
-              return Material(
-                color: tileColor,
-                borderRadius: BorderRadius.circular(12),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: iconBackgroundColor,
-                    child: Icon(icon, color: iconColor, size: 22),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  title: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        lessonDate,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        lessonTime,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      Text(
-                        titleStatusText,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: titleStatusColor,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        statusText,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: statusColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  trailing: Text(
-                    '$price руб.',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: priceColor,
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                child: Material(
+                  color: tileColor,
+                  borderRadius: BorderRadius.circular(10),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: iconBackgroundColor,
+                      child: Icon(icon, color: iconColor, size: 22),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                    ),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          lessonDate,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(lessonTime, style: const TextStyle(fontSize: 15)),
+                      ],
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          titleStatusText,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: titleStatusColor,
+                          ),
+                        ),
+                        Text(
+                          statusText,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: statusColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    trailing: Text(
+                      '$price руб.',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: priceColor,
+                      ),
+                    ),
+                    onTap: () =>
+                        _toggleLessonPaidStatus(lesson['id'] as int, isPaid),
                   ),
-                  onTap: () =>
-                      _toggleLessonPaidStatus(lesson['id'] as int, isPaid),
                 ),
               );
             }).toList(),

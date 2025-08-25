@@ -3,6 +3,7 @@ import 'package:rephelp/data/app_database.dart';
 import 'package:intl/intl.dart';
 import 'package:rephelp/screens/income_statistics_screen.dart';
 import 'package:rephelp/widgets/custom_app_bar.dart';
+import 'package:rephelp/widgets/student_selection_dialog.dart';
 
 class FinanceScreen extends StatefulWidget {
   const FinanceScreen({super.key});
@@ -91,11 +92,21 @@ class _ClassesViewState extends State<ClassesView> {
   double _totalEarned = 0.0;
   double _unpaidAmount = 0.0;
   bool _isLoading = true;
+  List<int>? _selectedStudentIds;
 
   @override
   void initState() {
     super.initState();
-    _loadFinancialData();
+    _initializeStudentFilter();
+  }
+
+  Future<void> _initializeStudentFilter() async {
+    final students = await _database.getStudents(isArchived: false);
+    if (!mounted) return;
+    setState(() {
+      _selectedStudentIds = students.map((s) => s.id!).toList();
+    });
+    await _loadFinancialData();
   }
 
   Future<void> _loadFinancialData({bool withSpinner = true}) async {
@@ -104,7 +115,29 @@ class _ClassesViewState extends State<ClassesView> {
       setState(() => _isLoading = true);
     }
 
-    var allLessons = await _database.getFinancialData();
+    // Don't load if the filter isn't initialized yet.
+    if (_selectedStudentIds == null) {
+      if (withSpinner) {
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+      }
+      return;
+    }
+
+    // If the filter is empty, clear the list and stop.
+    if (_selectedStudentIds!.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _groupedFinancialData = {};
+        _totalEarned = 0.0;
+        _unpaidAmount = 0.0;
+        _isLoading = false;
+      });
+      return;
+    }
+
+    var allLessons =
+        await _database.getFinancialData(studentIds: _selectedStudentIds);
     final now = DateTime.now();
     bool updated = false;
 
@@ -179,6 +212,26 @@ class _ClassesViewState extends State<ClassesView> {
     );
   }
 
+  Future<void> _openStudentSelectionDialog() async {
+    if (_selectedStudentIds == null) return;
+
+    final selectedIds = await showDialog<List<int>>(
+      context: context,
+      builder: (context) {
+        return StudentSelectionDialog(
+          initialSelectedIds: _selectedStudentIds!,
+        );
+      },
+    );
+
+    if (selectedIds != null) {
+      setState(() {
+        _selectedStudentIds = selectedIds;
+      });
+      await _loadFinancialData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return _isLoading
@@ -201,18 +254,20 @@ class _ClassesViewState extends State<ClassesView> {
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: _showNotImplementedDialog,
+              onPressed: _openStudentSelectionDialog,
               style: OutlinedButton.styleFrom(
+                backgroundColor: Colors.white,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 alignment: Alignment.centerLeft,
+                side: BorderSide(color: Colors.grey[300]!),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Все ученики',
                       style: TextStyle(fontSize: 16, color: Colors.black)),
-                  Icon(Icons.arrow_drop_down, color: Colors.black),
+                  Icon(Icons.arrow_drop_down, color: Colors.black, size: 30),
                 ],
               ),
             ),

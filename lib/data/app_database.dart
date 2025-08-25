@@ -322,9 +322,10 @@ class AppDatabase {
     );
   }
 
-  Future<List<Map<String, dynamic>>> getFinancialData() async {
+  Future<List<Map<String, dynamic>>> getFinancialData(
+      {List<int>? studentIds}) async {
     final db = await database;
-    return await db.rawQuery('''
+    String query = '''
     SELECT
       lessons.id,
       lessons.start_time,
@@ -336,8 +337,18 @@ class AppDatabase {
       students.autoPay
     FROM lessons
     INNER JOIN students ON lessons.student_id = students.id
-    ORDER BY lessons.start_time DESC;
-  ''');
+    ''';
+
+    List<dynamic> args = [];
+    if (studentIds != null && studentIds.isNotEmpty) {
+      query +=
+          ' WHERE students.id IN (${List.filled(studentIds.length, '?').join(',')})';
+      args.addAll(studentIds);
+    }
+
+    query += ' ORDER BY lessons.start_time ASC;';
+
+    return await db.rawQuery(query, args);
   }
 
   Future<List<Map<String, dynamic>>> getFinancialDataByDateRange(

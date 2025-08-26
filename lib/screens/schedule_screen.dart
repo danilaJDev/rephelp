@@ -811,6 +811,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     return Column(
       children: [
         TableCalendar(
+          startingDayOfWeek: StartingDayOfWeek.monday,
           focusedDay: _focusedDay,
           firstDay: DateTime.utc(2020, 1, 1),
           lastDay: DateTime.utc(2030, 12, 31),

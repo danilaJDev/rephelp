@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:rephelp/screens/income_statistics_screen.dart';
 import 'package:rephelp/widgets/custom_app_bar.dart';
 import 'package:rephelp/widgets/student_selection_dialog.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class FinanceScreen extends StatefulWidget {
   const FinanceScreen({super.key});
@@ -318,48 +319,7 @@ class _ClassesViewState extends State<ClassesView> {
   }
 
   Future<void> _showCalendarDialog() async {
-    final selectedDate = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-      helpText: 'ВЫБЕРИТЕ ДАТУ',
-      cancelText: 'ОТМЕНА',
-      confirmText: 'ВЫБРАТЬ',
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            datePickerTheme: DatePickerThemeData(
-              headerHeadlineStyle: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-              cancelButtonStyle: OutlinedButton.styleFrom(
-                backgroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                side: const BorderSide(color: Colors.grey),
-              ),
-              confirmButtonStyle: FilledButton.styleFrom(
-                backgroundColor: Colors.deepPurple,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-              ),
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                minimumSize: const Size(100, 30),
-                alignment: Alignment.center,
-              ),
-            ),
-          ),
-          child: Center(child: child),
-        );
-      },
-    );
+    final selectedDate = await _showTableCalendarDialog();
 
     if (selectedDate != null) {
       setState(() {
@@ -372,6 +332,68 @@ class _ClassesViewState extends State<ClassesView> {
       });
       await _loadFinancialData();
     }
+  }
+
+  Future<DateTime?> _showTableCalendarDialog() async {
+    DateTime? selectedDay = _selectedDate ?? DateTime.now();
+    DateTime focusedDay = _selectedDate ?? DateTime.now();
+
+    return showDialog<DateTime>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              content: SizedBox(
+                width: double.maxFinite,
+                child: TableCalendar(
+                  locale: 'ru_RU',
+                  startingDayOfWeek: StartingDayOfWeek.monday,
+                  focusedDay: focusedDay,
+                  firstDay: DateTime.utc(2020, 1, 1),
+                  lastDay: DateTime.utc(2030, 12, 31),
+                  selectedDayPredicate: (day) => isSameDay(selectedDay, day),
+                  onDaySelected: (selected, focused) {
+                    setDialogState(() {
+                      selectedDay = selected;
+                      focusedDay = focused;
+                    });
+                  },
+                  headerStyle: const HeaderStyle(
+                    formatButtonVisible: false,
+                    titleCentered: true,
+                  ),
+                  calendarStyle: const CalendarStyle(
+                    todayDecoration: BoxDecoration(
+                      color: Colors.blueGrey,
+                      shape: BoxShape.circle,
+                    ),
+                    selectedDecoration: BoxDecoration(
+                      color: Colors.deepPurple,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: const Text('ОТМЕНА'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: const Text('ВЫБРАТЬ'),
+                  onPressed: () {
+                    Navigator.of(context).pop(selectedDay);
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _openStudentSelectionDialog() async {

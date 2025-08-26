@@ -839,6 +839,18 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           },
 
           calendarBuilders: CalendarBuilders(
+            dowBuilder: (context, day) {
+              final text = DateFormat.E('ru_RU').format(day);
+              return Center(
+                child: Text(
+                  text,
+                  style: const TextStyle(
+                    fontSize: 13.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              );
+            },
             markerBuilder: (context, day, events) {
               if (events.isEmpty) return const SizedBox();
 

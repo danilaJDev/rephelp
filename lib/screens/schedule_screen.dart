@@ -24,7 +24,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   List<Student> _students = [];
   Map<DateTime, List<Map<String, dynamic>>> _allLessons = {};
   DateTime _focusedDateForTable = DateTime.now();
-  final Set<int> _hiddenLessons = {};
 
   @override
   void initState() {
@@ -214,7 +213,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         final day = sortedDays[index];
         final lessons = _allLessons[day]!.where((lessonData) {
           final lesson = lessonData['lesson'] as Lesson;
-          return !_hiddenLessons.contains(lesson.id);
+          return !lesson.isHidden;
         }).toList();
 
         if (lessons.isEmpty) return const SizedBox.shrink();
@@ -359,10 +358,20 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       color: Colors.grey,
                       size: 24,
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _hiddenLessons.add(lesson.id!);
-                      });
+                    onPressed: () async {
+                      final newLesson = Lesson(
+                        id: lesson.id,
+                        studentId: lesson.studentId,
+                        startTime: lesson.startTime,
+                        endTime: lesson.endTime,
+                        isPaid: lesson.isPaid,
+                        notes: lesson.notes,
+                        price: lesson.price,
+                        isHomeworkSent: lesson.isHomeworkSent,
+                        isHidden: true,
+                      );
+                      await _database.updateLesson(newLesson);
+                      await _loadAllData();
                     },
                   ),
                 )
@@ -436,9 +445,18 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 );
                 await _database.updateLesson(newLesson);
                 if (!newLesson.isHomeworkSent) {
-                  setState(() {
-                    _hiddenLessons.remove(newLesson.id);
-                  });
+                  final unhiddenLesson = Lesson(
+                    id: newLesson.id,
+                    studentId: newLesson.studentId,
+                    startTime: newLesson.startTime,
+                    endTime: newLesson.endTime,
+                    isPaid: newLesson.isPaid,
+                    notes: newLesson.notes,
+                    price: newLesson.price,
+                    isHomeworkSent: newLesson.isHomeworkSent,
+                    isHidden: false,
+                  );
+                  await _database.updateLesson(unhiddenLesson);
                 }
                 await _loadAllData();
                 Navigator.of(context).pop();
@@ -793,6 +811,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     return Column(
       children: [
         TableCalendar(
+          startingDayOfWeek: StartingDayOfWeek.monday,
           focusedDay: _focusedDay,
           firstDay: DateTime.utc(2020, 1, 1),
           lastDay: DateTime.utc(2030, 12, 31),
@@ -820,6 +839,18 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           },
 
           calendarBuilders: CalendarBuilders(
+            dowBuilder: (context, day) {
+              final text = DateFormat.E('ru_RU').format(day);
+              return Center(
+                child: Text(
+                  text,
+                  style: const TextStyle(
+                    fontSize: 13.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              );
+            },
             markerBuilder: (context, day, events) {
               if (events.isEmpty) return const SizedBox();
 

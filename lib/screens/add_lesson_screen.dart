@@ -28,7 +28,12 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
   late TextEditingController _notesController;
+  late TextEditingController _priceController;
   bool _isFormValid = false;
+  bool _priceHasChanged = false;
+  double? _originalLessonPrice;
+  bool _applyNewPriceToFuture = false;
+  bool _dialogShown = false;
 
   bool _duplicateLessons = false;
   DateTime? _duplicationStartDate;
@@ -40,6 +45,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
     super.initState();
     _lessonDate = widget.selectedDate;
     _notesController = TextEditingController();
+    _priceController = TextEditingController();
 
     if (widget.lessonToEdit != null) {
       final lesson = widget.lessonToEdit!;
@@ -54,10 +60,68 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
       } catch (e) {
         _selectedStudent = null;
       }
+      _originalLessonPrice = lesson.price;
+      _priceController.text = (lesson.price ?? _selectedStudent?.price ?? 0)
+          .toStringAsFixed(0);
+
+      if (_selectedStudent != null &&
+          _originalLessonPrice != null &&
+          _selectedStudent!.price != _originalLessonPrice) {
+        _priceHasChanged = true;
+      }
     } else if (widget.students.isNotEmpty) {
       _selectedStudent = widget.students.first;
+      _priceController.text = (_selectedStudent?.price ?? 0).toStringAsFixed(0);
     }
     _validateForm();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_priceHasChanged && !_dialogShown) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showPriceChangedDialog();
+      });
+    }
+  }
+
+  void _showPriceChangedDialog() {
+    setState(() {
+      _dialogShown = true;
+    });
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User must choose an action
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Изменение цены'),
+          content: Text(
+            'Цена работы с учеником ${_selectedStudent?.name ?? ''} изменилась с ${_originalLessonPrice?.toStringAsFixed(0)} руб на ${_selectedStudent?.price.toStringAsFixed(0)} руб. Применить изменения стоимости к этому и последующим занятиям?',
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Отмена'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            ElevatedButton(
+              child: const Text('Подтвердить'),
+              onPressed: () {
+                setState(() {
+                  _priceController.text =
+                      _selectedStudent!.price.toStringAsFixed(0);
+                  _applyNewPriceToFuture = true;
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _validateForm() {
@@ -89,17 +153,28 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
     }
 
     final database = AppDatabase();
+    final newPrice = double.tryParse(_priceController.text) ?? student.price;
 
-    if (_applyToFutureLessons && widget.lessonToEdit != null) {
+    final shouldApplyToFuture =
+        (_applyToFutureLessons || _applyNewPriceToFuture) &&
+            widget.lessonToEdit != null;
+
+    if (shouldApplyToFuture) {
       final originalLesson = widget.lessonToEdit!;
-      final lessonsToUpdate = await database.getFutureRecurringLessons(
+      final lessonsToUpdate = await database.getFutureLessons(
         originalLesson.studentId,
         originalLesson.startTime,
       );
+
       final dayDifference =
           _lessonDate.weekday - originalLesson.startTime.weekday;
 
       final updatedLessons = lessonsToUpdate.map((lesson) {
+        // Only change price if the "apply new price" checkbox was ticked.
+        // The other bulk edit options should not change the price.
+        final priceForThisLesson =
+            _applyNewPriceToFuture ? newPrice : lesson.price;
+
         final newDate = lesson.startTime.add(Duration(days: dayDifference));
         final newStartTime = DateTime(
           newDate.year,
@@ -123,7 +198,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
           endTime: newEndTime,
           isPaid: lesson.isPaid,
           notes: _notesController.text,
-          price: student.price,
+          price: priceForThisLesson,
         );
       }).toList();
 
@@ -156,7 +231,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                 _endTime!.minute,
               ),
               notes: _notesController.text,
-              price: student.price,
+              price: newPrice,
             ),
           );
         }
@@ -195,7 +270,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
           endTime: lessonEndTime,
           isPaid: widget.lessonToEdit!.isPaid,
           notes: _notesController.text,
-          price: student.price,
+          price: newPrice,
         );
         await database.updateLesson(lessonToUpdate);
       } else {
@@ -204,7 +279,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
           startTime: lessonStartTime,
           endTime: lessonEndTime,
           notes: _notesController.text,
-          price: student.price,
+          price: newPrice,
         );
         await database.insertLesson(newLesson);
       }
@@ -329,6 +404,74 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                   isExpanded: true,
                   validator: (value) =>
                       value == null ? 'Пожалуйста, выберите ученика' : null,
+                ),
+              ),
+            ),
+
+            _buildSectionTitle('Стоимость'),
+            Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _priceController,
+                      decoration: const InputDecoration(
+                        labelText: 'Цена за занятие',
+                        suffixText: 'руб.',
+                        border: InputBorder.none,
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Введите цену';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return 'Некорректное число';
+                        }
+                        return null;
+                      },
+                    ),
+                    if (_priceHasChanged) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Цена изменена: ${_originalLessonPrice?.toStringAsFixed(0)} руб → ${_selectedStudent?.price.toStringAsFixed(0)} руб',
+                              style: TextStyle(
+                                color: Colors.orange.shade900,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            CheckboxListTile(
+                              title: const Text('Применить новую цену'),
+                              value: _applyNewPriceToFuture,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  _applyNewPriceToFuture = value ?? false;
+                                });
+                              },
+                              controlAffinity: ListTileControlAffinity.leading,
+                              activeColor: Colors.deepPurple,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),

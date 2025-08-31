@@ -220,6 +220,25 @@ class AppDatabase {
     });
   }
 
+  Future<List<Lesson>> getFutureLessons(
+    int studentId,
+    DateTime startTime,
+  ) async {
+    final db = await database;
+    final startTimeMillis = startTime.millisecondsSinceEpoch;
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'lessons',
+      where: 'student_id = ? AND start_time >= ?',
+      whereArgs: [studentId, startTimeMillis],
+      orderBy: 'start_time ASC',
+    );
+
+    return List.generate(maps.length, (i) {
+      return Lesson.fromMap(maps[i]);
+    });
+  }
+
   Future<List<Lesson>> getAllLessons() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('lessons');

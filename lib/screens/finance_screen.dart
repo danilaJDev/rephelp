@@ -181,13 +181,31 @@ class _FinanceScreenState extends State<FinanceScreen>
             ),
             child: TabBar(
               controller: _tabController,
-              tabs: const [
-                Tab(icon: Icon(Icons.payment), text: 'Занятия'),
-                Tab(icon: Icon(Icons.bar_chart), text: 'Статистика'),
-              ],
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white70,
-              indicatorColor: Colors.white,
+              indicator: const UnderlineTabIndicator(
+                borderSide: BorderSide(color: Colors.white, width: 3),
+                insets: EdgeInsets.symmetric(horizontal: 100),
+              ),
+              labelStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+              unselectedLabelStyle: const TextStyle(fontSize: 14),
+              tabs: const [
+                Tab(
+                  child: Text(
+                    'Занятия',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Tab(
+                  child: Text(
+                    'Статистика',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(

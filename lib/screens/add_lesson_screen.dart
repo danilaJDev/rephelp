@@ -263,7 +263,10 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                       color: Colors.deepPurple,
                     ),
                     title: const Text('Дата'),
-                    trailing: Text(DateFormat('dd.MM.yy').format(_lessonDate)),
+                    trailing: Text(
+                      DateFormat('dd.MM.yy').format(_lessonDate),
+                      style: TextStyle(fontSize: 14),
+                    ),
                     onTap: _selectLessonDate,
                   ),
                   const Divider(height: 1, indent: 16, endIndent: 16),
@@ -275,6 +278,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                     title: const Text('Начало'),
                     trailing: Text(
                       _startTime?.format(context) ?? 'Выберите время',
+                      style: TextStyle(fontSize: 14),
                     ),
                     onTap: () => _selectTime(true),
                   ),
@@ -287,6 +291,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                     title: const Text('Конец'),
                     trailing: Text(
                       _endTime?.format(context) ?? 'Выберите время',
+                      style: TextStyle(fontSize: 14),
                     ),
                     onTap: () => _selectTime(false),
                   ),
@@ -430,23 +435,28 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
             ],
 
             _buildSectionTitle('Примечания'),
-            Card(
-              color: Colors.white,
-              margin: const EdgeInsets.symmetric(vertical: 4.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextFormField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(
-                    hintText: 'Добавьте примечание к занятию...',
-                    border: InputBorder.none,
+            Column(
+              children: [
+                Card(
+                  color: Colors.white,
+                  margin: const EdgeInsets.symmetric(vertical: 4.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15.0),
                   ),
-                  maxLines: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: TextFormField(
+                      controller: _notesController,
+                      decoration: const InputDecoration(
+                        hintText: 'Добавьте примечание к занятию...',
+                        border: InputBorder.none,
+                      ),
+                      maxLines: 2,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 50.0), // Отступ после карточки
+              ],
             ),
           ],
         ),

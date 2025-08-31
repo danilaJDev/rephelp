@@ -207,37 +207,77 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15.0),
               ),
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Имя *',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    // Имя *
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Имя *',
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.deepPurple,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Пожалуйста, введите имя';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Фамилия
+                    TextFormField(
+                      controller: _surnameController,
+                      decoration: InputDecoration(
+                        labelText: 'Фамилия',
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.deepPurple,
+                            width: 2,
+                          ),
+                        ),
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty)
-                        return 'Пожалуйста, введите имя';
-                      return null;
-                    },
-                  ),
-                  const Divider(height: 1, color: Colors.grey),
-                  TextFormField(
-                    controller: _surnameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Фамилия',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
@@ -248,56 +288,115 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15.0),
               ),
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _phoneController,
-                    decoration: const InputDecoration(
-                      labelText: 'Телефон',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    // Телефон
+                    TextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: 'Телефон',
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.deepPurple,
+                            width: 2,
+                          ),
+                        ),
                       ),
                     ),
-                    keyboardType: TextInputType.phone,
-                  ),
-                  const Divider(height: 1, color: Colors.grey),
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+
+                    const SizedBox(height: 12),
+
+                    // Email
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.deepPurple,
+                            width: 2,
+                          ),
+                        ),
                       ),
                     ),
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  const Divider(height: 1, color: Colors.grey),
-                  ..._messengers.map((messenger) {
-                    return ListTile(
-                      title: Text(
-                        '${messenger['type']}: ${messenger['value']}',
+
+                    const SizedBox(height: 16),
+
+                    // Список мессенджеров
+                    ..._messengers.map(
+                      (messenger) => Container(
+                        margin: const EdgeInsets.only(bottom: 8.0),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: ListTile(
+                          title: Text(
+                            '${messenger['type']}: ${messenger['value']}',
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () =>
+                                setState(() => _messengers.remove(messenger)),
+                          ),
+                        ),
                       ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () =>
-                            setState(() => _messengers.remove(messenger)),
-                      ),
-                    );
-                  }),
-                  const Divider(height: 1, color: Colors.grey),
-                  ListTile(
-                    leading: const Icon(Icons.add, color: Colors.deepPurple),
-                    title: const Text(
-                      'Добавить мессенджер',
-                      style: TextStyle(color: Colors.deepPurple),
                     ),
-                    onTap: _showAddMessengerDialog,
-                  ),
-                ],
+
+                    // Кнопка "Добавить мессенджер"
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.deepPurple),
+                      ),
+                      child: ListTile(
+                        leading: const Icon(
+                          Icons.add,
+                          color: Colors.deepPurple,
+                        ),
+                        title: const Text(
+                          'Добавить мессенджер',
+                          style: TextStyle(color: Colors.deepPurple),
+                        ),
+                        onTap: _showAddMessengerDialog,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -306,41 +405,108 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
               color: Colors.white,
               margin: const EdgeInsets.symmetric(vertical: 4.0),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
+                borderRadius: BorderRadius.circular(15),
               ),
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _priceController,
-                    decoration: const InputDecoration(
-                      labelText: 'Цена за одно занятие *',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // Цена за одно занятие *
+                    TextFormField(
+                      controller: _priceController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Цена за одно занятие *',
+                        // BYN справа
+                        suffix: Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child: Text(
+                            'BYN',
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        contentPadding: const EdgeInsets.only(
+                          left: 16,
+                          top: 12,
+                          bottom: 12,
+                          right: 16,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.deepPurple,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Пожалуйста, введите цену';
+                        }
+                        if (double.tryParse(value.replaceAll(',', '.')) ==
+                            null) {
+                          return 'Пожалуйста, введите число';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Авто-оплата занятия
+                    InkWell(
+                      onTap: () => setState(() => _autoPay = !_autoPay),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _autoPay
+                              ? Colors.deepPurple.withOpacity(0.05)
+                              : Colors.transparent,
+                          border: Border.all(
+                            color: _autoPay
+                                ? Colors.deepPurple
+                                : Colors.grey.shade300,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Checkbox(
+                              value: _autoPay,
+                              onChanged: (v) =>
+                                  setState(() => _autoPay = v ?? false),
+                              activeColor: Colors.deepPurple,
+                            ),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'После проведения занятия считать его автоматически оплаченным',
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty)
-                        return 'Пожалуйста, введите цену';
-                      if (double.tryParse(value) == null)
-                        return 'Пожалуйста, введите число';
-                      return null;
-                    },
-                  ),
-                  const Divider(height: 1, color: Colors.grey),
-                  CheckboxListTile(
-                    title: const Text(
-                      'После проведения занятия считать его автоматически оплаченным',
-                    ),
-                    value: _autoPay,
-                    onChanged: (bool? value) =>
-                        setState(() => _autoPay = value ?? false),
-                    controlAffinity: ListTileControlAffinity.leading,
-                    activeColor: Colors.deepPurple,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
@@ -349,21 +515,39 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
               color: Colors.white,
               margin: const EdgeInsets.symmetric(vertical: 4.0),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
+                borderRadius: BorderRadius.circular(15),
               ),
               child: TextFormField(
                 controller: _notesController,
-                decoration: const InputDecoration(
-                  hintText: 'Добавьте примечание...',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Добавьте примечание к занятию...',
+                  alignLabelWithHint: true,
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
                   ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Colors.deepPurple,
+                      width: 2,
+                    ),
+                  ),
                 ),
-                maxLines: 3,
               ),
             ),
+
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -378,7 +562,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
         style: const TextStyle(
           color: Colors.deepPurple,
           fontWeight: FontWeight.bold,
-          fontSize: 14,
+          fontSize: 16,
         ),
       ),
     );

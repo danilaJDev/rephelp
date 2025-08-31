@@ -35,6 +35,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   DateTime? _duplicationStartDate;
   DateTime? _duplicationEndDate;
   bool _applyToFutureLessons = false;
+  bool _isHistorical = false;
 
   @override
   void initState() {
@@ -45,17 +46,20 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
 
     if (widget.lessonToEdit != null) {
       final lesson = widget.lessonToEdit!;
+      _isHistorical = lesson.studentId == null;
       _lessonDate = lesson.startTime;
       _startTime = TimeOfDay.fromDateTime(lesson.startTime);
       _endTime = TimeOfDay.fromDateTime(lesson.endTime);
       _notesController.text = lesson.notes ?? '';
       _priceController.text = lesson.price?.toString() ?? '';
-      try {
-        _selectedStudent = widget.students.firstWhere(
-          (s) => s.id == lesson.studentId,
-        );
-      } catch (e) {
-        _selectedStudent = null;
+      if (!_isHistorical) {
+        try {
+          _selectedStudent = widget.students.firstWhere(
+            (s) => s.id == lesson.studentId,
+          );
+        } catch (e) {
+          _selectedStudent = null;
+        }
       }
     } else if (widget.students.isNotEmpty) {
       _selectedStudent = widget.students.first;
@@ -65,13 +69,13 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   }
 
   void _validateForm() {
-    final isValid =
-        _selectedStudent != null &&
-        _startTime != null &&
+    final isStudentValid = _isHistorical || _selectedStudent != null;
+    final isTimeValid = _startTime != null &&
         _endTime != null &&
         (_startTime!.hour < _endTime!.hour ||
             (_startTime!.hour == _endTime!.hour &&
                 _startTime!.minute < _endTime!.minute));
+    final isValid = isStudentValid && isTimeValid;
     if (_isFormValid != isValid) {
       setState(() {
         _isFormValid = isValid;
@@ -85,20 +89,17 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
     }
 
     final student = _selectedStudent;
-    if (student == null ||
-        student.id == null ||
-        _startTime == null ||
-        _endTime == null) {
+    if ((student == null || student.id == null) && !_isHistorical) {
+      return;
+    }
+    if (_startTime == null || _endTime == null) {
       return;
     }
 
     final database = AppDatabase();
 
-    if (_applyToFutureLessons && widget.lessonToEdit != null) {
+    if (_applyToFutureLessons && widget.lessonToEdit != null && student != null) {
       final originalLesson = widget.lessonToEdit!;
-      if (originalLesson.studentId == null) {
-        return;
-      }
       final lessonsToUpdate = await database.getFutureRecurringLessons(
         originalLesson.studentId!,
         originalLesson.startTime,
@@ -125,7 +126,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
 
         return Lesson(
           id: lesson.id,
-          studentId: lesson.studentId,
+          studentId: student.id!,
           studentName: student.name,
           studentSurname: student.surname,
           startTime: newStartTime,
@@ -201,9 +202,13 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
       if (widget.lessonToEdit != null) {
         final lessonToUpdate = Lesson(
           id: widget.lessonToEdit!.id,
-          studentId: student.id!,
-          studentName: student.name,
-          studentSurname: student.surname,
+          studentId: _isHistorical ? null : student!.id,
+          studentName: _isHistorical
+              ? widget.lessonToEdit!.studentName
+              : student!.name,
+          studentSurname: _isHistorical
+              ? widget.lessonToEdit!.studentSurname
+              : student!.surname,
           startTime: lessonStartTime,
           endTime: lessonEndTime,
           isPaid: widget.lessonToEdit!.isPaid,
@@ -213,7 +218,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         await database.updateLesson(lessonToUpdate);
       } else {
         final newLesson = Lesson(
-          studentId: student.id!,
+          studentId: student!.id!,
           studentName: student.name,
           studentSurname: student.surname,
           startTime: lessonStartTime,
@@ -272,54 +277,39 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
               ),
               child: Column(
                 children: [
-                  ListTile(
-                    leading: const Icon(
-                      Icons.calendar_today,
-                      color: Colors.deepPurple,
-                    ),
-                    title: const Text('Дата'),
-                    trailing: Text(DateFormat('dd.MM.yy').format(_lessonDate)),
+                  _buildPickerTile(
+                    label: 'Дата',
+                    value: DateFormat('dd.MM.yy').format(_lessonDate),
                     onTap: _selectLessonDate,
                   ),
-                  const Divider(height: 1, indent: 16, endIndent: 16),
-                  ListTile(
-                    leading: const Icon(
-                      Icons.access_time,
-                      color: Colors.deepPurple,
-                    ),
-                    title: const Text('Начало'),
-                    trailing: Text(
-                      _startTime?.format(context) ?? 'Выберите время',
-                    ),
+                  const Divider(height: 1, color: Colors.grey),
+                  _buildPickerTile(
+                    label: 'Начало',
+                    value: _startTime?.format(context) ?? 'Выберите время',
                     onTap: () => _selectTime(true),
                   ),
-                  const Divider(height: 1, indent: 16, endIndent: 16),
-                  ListTile(
-                    leading: const Icon(
-                      Icons.access_time_filled,
-                      color: Colors.deepPurple,
-                    ),
-                    title: const Text('Конец'),
-                    trailing: Text(
-                      _endTime?.format(context) ?? 'Выберите время',
-                    ),
+                  const Divider(height: 1, color: Colors.grey),
+                  _buildPickerTile(
+                    label: 'Конец',
+                    value: _endTime?.format(context) ?? 'Выберите время',
                     onTap: () => _selectTime(false),
                   ),
                 ],
               ),
             ),
 
-            _buildSectionTitle('Ученик'),
-            Card(
-              color: Colors.white,
-              margin: const EdgeInsets.symmetric(vertical: 4.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8.0,
+            if (_isHistorical)
+              _buildSectionTitle(
+                'Ученик: ${widget.lessonToEdit?.studentName ?? ''} ${widget.lessonToEdit?.studentSurname ?? ''}',
+              )
+            else
+              _buildSectionTitle('Ученик'),
+            if (!_isHistorical)
+              Card(
+                color: Colors.white,
+                margin: const EdgeInsets.symmetric(vertical: 4.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0),
                 ),
                 child: DropdownButtonFormField<Student>(
                   value: _selectedStudent,
@@ -341,15 +331,16 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                     );
                   }).toList(),
                   decoration: const InputDecoration(
+                    labelText: 'Ученик *',
                     border: InputBorder.none,
-                    hintText: 'Выберите ученика',
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                   isExpanded: true,
                   validator: (value) =>
                       value == null ? 'Пожалуйста, выберите ученика' : null,
                 ),
               ),
-            ),
 
             _buildSectionTitle('Финансы'),
             Card(
@@ -358,16 +349,15 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15.0),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextFormField(
-                  controller: _priceController,
-                  decoration: const InputDecoration(
-                    labelText: 'Цена',
-                    border: InputBorder.none,
-                  ),
-                  keyboardType: TextInputType.number,
+              child: TextFormField(
+                controller: _priceController,
+                decoration: const InputDecoration(
+                  labelText: 'Цена',
+                  border: InputBorder.none,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
+                keyboardType: TextInputType.number,
               ),
             ),
             _buildSectionTitle('Примечания'),
@@ -377,85 +367,20 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15.0),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextFormField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(
-                    hintText: 'Добавьте примечание к занятию...',
-                    border: InputBorder.none,
-                  ),
-                  maxLines: 3,
+              child: TextFormField(
+                controller: _notesController,
+                decoration: const InputDecoration(
+                  hintText: 'Добавьте примечание к занятию...',
+                  border: InputBorder.none,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
+                maxLines: 3,
               ),
             ),
 
-            _buildSectionTitle('Дублирование'),
-            Card(
-              color: Colors.white,
-              margin: const EdgeInsets.symmetric(vertical: 4.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              child: Column(
-                children: [
-                  CheckboxListTile(
-                    title: const Text(
-                      'Продублировать занятия в указанный день недели',
-                    ),
-                    value: _duplicateLessons,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _duplicateLessons = value ?? false;
-                        if (_duplicateLessons) {
-                          _applyToFutureLessons = false;
-                        }
-                      });
-                      _validateForm();
-                    },
-                    controlAffinity: ListTileControlAffinity.leading,
-                    activeColor: Colors.deepPurple,
-                  ),
-                  if (_duplicateLessons) ...[
-                    const Divider(height: 1, indent: 16, endIndent: 16),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.calendar_today,
-                        color: Colors.deepPurple,
-                      ),
-                      title: const Text('С'),
-                      trailing: Text(
-                        _duplicationStartDate == null
-                            ? 'Выберите дату'
-                            : DateFormat(
-                                'dd.MM.yy',
-                              ).format(_duplicationStartDate!),
-                      ),
-                      onTap: () => _selectDuplicationDate(true),
-                    ),
-                    const Divider(height: 1, indent: 16, endIndent: 16),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.calendar_today,
-                        color: Colors.deepPurple,
-                      ),
-                      title: const Text('По'),
-                      trailing: Text(
-                        _duplicationEndDate == null
-                            ? 'Выберите дату'
-                            : DateFormat(
-                                'dd.MM.yy',
-                              ).format(_duplicationEndDate!),
-                      ),
-                      onTap: () => _selectDuplicationDate(false),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            if (widget.lessonToEdit != null) ...[
-              _buildSectionTitle('Массовое редактирование'),
+            if (!_isHistorical) ...[
+              _buildSectionTitle('Дублирование'),
               Card(
                 color: Colors.white,
                 margin: const EdgeInsets.symmetric(vertical: 4.0),
@@ -466,14 +391,14 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                   children: [
                     CheckboxListTile(
                       title: const Text(
-                        'Применить к этому и всем последующим занятиям',
+                        'Продублировать занятия в указанный день недели',
                       ),
-                      value: _applyToFutureLessons,
+                      value: _duplicateLessons,
                       onChanged: (bool? value) {
                         setState(() {
-                          _applyToFutureLessons = value ?? false;
-                          if (_applyToFutureLessons) {
-                            _duplicateLessons = false;
+                          _duplicateLessons = value ?? false;
+                          if (_duplicateLessons) {
+                            _applyToFutureLessons = false;
                           }
                         });
                         _validateForm();
@@ -481,10 +406,77 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                       controlAffinity: ListTileControlAffinity.leading,
                       activeColor: Colors.deepPurple,
                     ),
+                    if (_duplicateLessons) ...[
+                      const Divider(height: 1, color: Colors.grey),
+                      _buildPickerTile(
+                        label: 'С',
+                        value: _duplicationStartDate == null
+                            ? 'Выберите дату'
+                            : DateFormat('dd.MM.yy')
+                                .format(_duplicationStartDate!),
+                        onTap: () => _selectDuplicationDate(true),
+                      ),
+                      const Divider(height: 1, color: Colors.grey),
+                      _buildPickerTile(
+                        label: 'По',
+                        value: _duplicationEndDate == null
+                            ? 'Выберите дату'
+                            : DateFormat('dd.MM.yy')
+                                .format(_duplicationEndDate!),
+                        onTap: () => _selectDuplicationDate(false),
+                      ),
+                    ],
                   ],
                 ),
               ),
             ],
+            if (widget.lessonToEdit != null && !_isHistorical) ...[
+              _buildSectionTitle('Массовое редактирование'),
+              Card(
+                color: Colors.white,
+                margin: const EdgeInsets.symmetric(vertical: 4.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0),
+                ),
+                child: CheckboxListTile(
+                  title: const Text(
+                    'Применить к этому и всем последующим занятиям',
+                  ),
+                  value: _applyToFutureLessons,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      _applyToFutureLessons = value ?? false;
+                      if (_applyToFutureLessons) {
+                        _duplicateLessons = false;
+                      }
+                    });
+                    _validateForm();
+                  },
+                  controlAffinity: ListTileControlAffinity.leading,
+                  activeColor: Colors.deepPurple,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPickerTile({
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 16)),
+            Text(value, style: const TextStyle(fontSize: 16)),
           ],
         ),
       ),

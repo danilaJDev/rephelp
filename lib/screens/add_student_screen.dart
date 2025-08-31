@@ -289,13 +289,21 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     );
                   }),
                   const Divider(height: 1, color: Colors.grey),
-                  ListTile(
-                    leading: const Icon(Icons.add, color: Colors.deepPurple),
-                    title: const Text(
-                      'Добавить мессенджер',
-                      style: TextStyle(color: Colors.deepPurple),
-                    ),
+                  InkWell(
                     onTap: _showAddMessengerDialog,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
+                        children: [
+                          Icon(Icons.add, color: Colors.deepPurple),
+                          SizedBox(width: 16),
+                          Text(
+                            'Добавить мессенджер',
+                            style: TextStyle(color: Colors.deepPurple),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),

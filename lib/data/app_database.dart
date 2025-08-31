@@ -157,13 +157,17 @@ class AppDatabase {
       final List<Map<String, dynamic>> oldLessons =
           await db.query('lessons_old');
       for (final oldLesson in oldLessons) {
-        final student = await db.query(
+        final studentResult = await db.query(
           'students',
           where: 'id = ?',
           whereArgs: [oldLesson['student_id']],
         );
-        final studentName = student.first['name'] as String?;
-        final studentSurname = student.first['surname'] as String?;
+        String? studentName;
+        String? studentSurname;
+        if (studentResult.isNotEmpty) {
+          studentName = studentResult.first['name'] as String?;
+          studentSurname = studentResult.first['surname'] as String?;
+        }
 
         await db.insert('lessons', {
           'id': oldLesson['id'],

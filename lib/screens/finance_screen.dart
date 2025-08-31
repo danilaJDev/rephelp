@@ -194,12 +194,14 @@ class _FinanceScreenState extends State<FinanceScreen>
               unselectedLabelStyle: const TextStyle(fontSize: 14),
               tabs: const [
                 Tab(
+                  icon: Icon(Icons.payment),
                   child: Text(
                     'Занятия',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
                 Tab(
+                  icon: Icon(Icons.bar_chart),
                   child: Text(
                     'Статистика',
                     style: TextStyle(fontWeight: FontWeight.bold),

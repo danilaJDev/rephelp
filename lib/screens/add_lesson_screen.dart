@@ -351,7 +351,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
               ),
             ),
 
-            _buildSectionTitle('Детали'),
+            _buildSectionTitle('Финансы'),
             Card(
               color: Colors.white,
               margin: const EdgeInsets.symmetric(vertical: 4.0),
@@ -360,26 +360,32 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _priceController,
-                      decoration: const InputDecoration(
-                        labelText: 'Цена',
-                        border: InputBorder.none,
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                    const Divider(),
-                    TextFormField(
-                      controller: _notesController,
-                      decoration: const InputDecoration(
-                        hintText: 'Добавьте примечание к занятию...',
-                        border: InputBorder.none,
-                      ),
-                      maxLines: 3,
-                    ),
-                  ],
+                child: TextFormField(
+                  controller: _priceController,
+                  decoration: const InputDecoration(
+                    labelText: 'Цена',
+                    border: InputBorder.none,
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+            ),
+            _buildSectionTitle('Примечания'),
+            Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextFormField(
+                  controller: _notesController,
+                  decoration: const InputDecoration(
+                    hintText: 'Добавьте примечание к занятию...',
+                    border: InputBorder.none,
+                  ),
+                  maxLines: 3,
                 ),
               ),
             ),

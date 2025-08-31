@@ -9,52 +9,35 @@ class AnalyticsScreen extends StatefulWidget {
   State<AnalyticsScreen> createState() => _AnalyticsScreenState();
 }
 
-import 'package:intl/intl.dart';
-
-class _AnalyticsScreenState extends State<AnalyticsScreen>
-    with SingleTickerProviderStateMixin {
+class _AnalyticsScreenState extends State<AnalyticsScreen> {
   final AppDatabase _database = AppDatabase();
   bool _isLoading = true;
   int _completedLessons = 0;
   int _paidLessons = 0;
   int _totalStudents = 0;
+  int _activeStudents = 0;
   double _earnedIncome = 0.0;
-  double _expectedIncome = 0.0;
-  Map<String, double> _monthlyIncomeData = {};
-
-  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _loadAnalyticsData();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadAnalyticsData() async {
     setState(() => _isLoading = true);
 
-    final students = await _database.getStudents(isArchived: false);
+    final allStudents = await _database.getStudents();
+    final activeStudents = await _database.getStudents(isArchived: false);
     final financialData = await _database.getFinancialData();
 
     int completedLessonsCount = 0;
     int paidLessonsCount = 0;
     double totalEarned = 0.0;
-    double totalExpected = 0.0;
-    Map<String, double> monthlyIncome = {};
 
     final now = DateTime.now();
 
     for (var lessonData in financialData) {
-      final startTime = DateTime.fromMillisecondsSinceEpoch(
-        lessonData['start_time'] as int,
-      );
       final endTime = DateTime.fromMillisecondsSinceEpoch(
         lessonData['end_time'] as int,
       );
@@ -63,18 +46,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
 
       if (isPaid) {
         paidLessonsCount++;
-        final monthKey = DateFormat.yMMM('ru').format(startTime);
-        monthlyIncome.update(monthKey, (value) => value + price,
-            ifAbsent: () => price);
+        totalEarned += price;
       }
 
       if (endTime.isBefore(now)) {
         completedLessonsCount++;
-        if (isPaid) {
-          totalEarned += price;
-        } else {
-          totalExpected += price;
-        }
       }
     }
 
@@ -82,10 +58,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     setState(() {
       _completedLessons = completedLessonsCount;
       _paidLessons = paidLessonsCount;
-      _totalStudents = students.length;
+      _totalStudents = allStudents.length;
+      _activeStudents = activeStudents.length;
       _earnedIncome = totalEarned;
-      _expectedIncome = totalExpected;
-      _monthlyIncomeData = monthlyIncome;
       _isLoading = false;
     });
   }
@@ -104,6 +79,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
           : Column(
               children: [
                 Container(
+                  height: 60,
                   decoration: const BoxDecoration(
                     color: Colors.deepPurple,
                     borderRadius: BorderRadius.only(
@@ -111,52 +87,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                       bottomRight: Radius.circular(20),
                     ),
                   ),
-                  child: TabBar(
-                    controller: _tabController,
-                    labelColor: Colors.white,
-                    unselectedLabelColor: Colors.white70,
-                    indicator: const UnderlineTabIndicator(
-                      borderSide: BorderSide(color: Colors.white, width: 3),
-                      insets: EdgeInsets.symmetric(horizontal: 100),
-                    ),
-                    labelStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    unselectedLabelStyle: const TextStyle(fontSize: 14),
-                    tabs: const [
-                      Tab(
-                        icon: Icon(Icons.analytics),
-                        child: Text(
-                          'Общая',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Tab(
-                        icon: Icon(Icons.monetization_on),
-                        child: Text(
-                          'Доходы',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
                 Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildGeneralAnalyticsView(),
-                      _buildIncomeAnalyticsView(),
-                    ],
-                  ),
+                  child: _buildAnalyticsView(),
                 ),
               ],
             ),
     );
   }
 
-  Widget _buildGeneralAnalyticsView() {
+  Widget _buildAnalyticsView() {
     return RefreshIndicator(
       onRefresh: _loadAnalyticsData,
       child: ListView(
@@ -173,68 +113,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
             Icons.payment,
           ),
           _buildStatCard(
-            'Активных учеников',
+            'Всего учеников',
             _totalStudents.toString(),
+            Icons.groups,
+          ),
+          _buildStatCard(
+            'Активных учеников',
+            _activeStudents.toString(),
             Icons.people_outline,
           ),
           _buildStatCard(
-            'Доход',
-            '', // Оставляем пустым, так как будем кастомный trailing
+            'Доход за всё время',
+            '${_earnedIncome.toStringAsFixed(0)} руб.',
             Icons.monetization_on_outlined,
-            trailingWidget: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Получено: ${_earnedIncome.toStringAsFixed(0)} руб.',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                    fontSize: 16,
-                  ),
-                ),
-                Text(
-                  'Ожидается: ${_expectedIncome.toStringAsFixed(0)} руб.',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildIncomeAnalyticsView() {
-    if (_monthlyIncomeData.isEmpty) {
-      return const Center(
-        child: Text('Нет данных о доходах.'),
-      );
-    }
-
-    final sortedMonths = _monthlyIncomeData.keys.toList()
-      ..sort((a, b) {
-        final aDate = DateFormat.yMMM('ru').parse(a);
-        final bDate = DateFormat.yMMM('ru').parse(b);
-        return bDate.compareTo(aDate);
-      });
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
-      itemCount: sortedMonths.length,
-      itemBuilder: (context, index) {
-        final month = sortedMonths[index];
-        final income = _monthlyIncomeData[month]!;
-        return _buildStatCard(
-          month,
-          '${income.toStringAsFixed(0)} руб.',
-          Icons.calendar_month,
-        );
-      },
     );
   }
 

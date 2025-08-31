@@ -28,7 +28,7 @@ class AppDatabase {
 
     return await openDatabase(
       path,
-      version: 10,
+      version: 9,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -100,7 +100,7 @@ class AppDatabase {
           start_time INTEGER,
           end_time INTEGER,
           is_paid INTEGER,
-          FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+          FOREIGN KEY (student_id) REFERENCES students(id)
         )
       ''');
       final List<Map<String, dynamic>> oldLessons = await db.query(
@@ -150,7 +150,7 @@ class AppDatabase {
         price REAL,
         is_homework_sent INTEGER NOT NULL DEFAULT 0,
         is_hidden INTEGER NOT NULL DEFAULT 0,
-        FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE SET NULL
+        FOREIGN KEY (student_id) REFERENCES students(id)
       )
     ''');
 
@@ -170,45 +170,6 @@ class AppDatabase {
           'student_id': oldLesson['student_id'],
           'student_name': studentName,
           'student_surname': studentSurname,
-          'start_time': oldLesson['start_time'],
-          'end_time': oldLesson['end_time'],
-          'is_paid': oldLesson['is_paid'],
-          'notes': oldLesson['notes'],
-          'price': oldLesson['price'],
-          'is_homework_sent': oldLesson['is_homework_sent'],
-          'is_hidden': oldLesson['is_hidden'],
-        });
-      }
-
-      await db.execute('DROP TABLE lessons_old');
-    }
-    if (oldVersion < 10) {
-      await db.execute('ALTER TABLE lessons RENAME TO lessons_old');
-      await db.execute('''
-      CREATE TABLE lessons(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id INTEGER,
-        student_name TEXT,
-        student_surname TEXT,
-        start_time INTEGER,
-        end_time INTEGER,
-        is_paid INTEGER,
-        notes TEXT,
-        price REAL,
-        is_homework_sent INTEGER NOT NULL DEFAULT 0,
-        is_hidden INTEGER NOT NULL DEFAULT 0,
-        FOREIGN KEY (student_id) REFERENCES students(id)
-      )
-    ''');
-
-      final List<Map<String, dynamic>> oldLessons =
-          await db.query('lessons_old');
-      for (final oldLesson in oldLessons) {
-        await db.insert('lessons', {
-          'id': oldLesson['id'],
-          'student_id': oldLesson['student_id'],
-          'student_name': oldLesson['student_name'],
-          'student_surname': oldLesson['student_surname'],
           'start_time': oldLesson['start_time'],
           'end_time': oldLesson['end_time'],
           'is_paid': oldLesson['is_paid'],

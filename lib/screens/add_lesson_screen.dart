@@ -96,8 +96,11 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
 
     if (_applyToFutureLessons && widget.lessonToEdit != null) {
       final originalLesson = widget.lessonToEdit!;
+      if (originalLesson.studentId == null) {
+        return;
+      }
       final lessonsToUpdate = await database.getFutureRecurringLessons(
-        originalLesson.studentId,
+        originalLesson.studentId!,
         originalLesson.startTime,
       );
       final dayDifference =

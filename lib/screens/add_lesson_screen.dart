@@ -397,26 +397,6 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
               ),
             ),
 
-            _buildSectionTitle('Примечания'),
-            Card(
-              color: Colors.white,
-              margin: const EdgeInsets.symmetric(vertical: 4.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextFormField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(
-                    hintText: 'Добавьте примечание к занятию...',
-                    border: InputBorder.none,
-                  ),
-                  maxLines: 3,
-                ),
-              ),
-            ),
-
             if (widget.lessonToEdit != null) ...[
               _buildSectionTitle('Массовое редактирование'),
               Card(
@@ -448,6 +428,26 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                 ),
               ),
             ],
+
+            _buildSectionTitle('Примечания'),
+            Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextFormField(
+                  controller: _notesController,
+                  decoration: const InputDecoration(
+                    hintText: 'Добавьте примечание к занятию...',
+                    border: InputBorder.none,
+                  ),
+                  maxLines: 3,
+                ),
+              ),
+            ),
           ],
         ),
       ),

@@ -12,11 +12,10 @@ class AnalyticsScreen extends StatefulWidget {
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
   final AppDatabase _database = AppDatabase();
   bool _isLoading = true;
-  int _completedLessons = 0;
-  int _paidLessons = 0;
+  int _conductedLessons = 0;
   int _totalStudents = 0;
-  double _earnedIncome = 0.0;
-  double _expectedIncome = 0.0;
+  int _activeStudents = 0;
+  double _totalRevenue = 0.0;
 
   @override
   void initState() {
@@ -27,44 +26,38 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Future<void> _loadAnalyticsData() async {
     setState(() => _isLoading = true);
 
-    final students = await _database.getStudents(isArchived: false);
+    final activeStudentsList = await _database.getStudents(isArchived: false);
+    final archivedStudentsList = await _database.getStudents(isArchived: true);
+    final allStudents = [...activeStudentsList, ...archivedStudentsList];
     final financialData = await _database.getFinancialData();
 
-    int completedLessonsCount = 0;
-    int paidLessonsCount = 0;
-    double totalEarned = 0.0;
-    double totalExpected = 0.0;
+    int conductedLessonsCount = 0;
+    double totalRevenueValue = 0.0;
 
     final now = DateTime.now();
 
     for (var lessonData in financialData) {
-      final endTime = DateTime.fromMillisecondsSinceEpoch(
-        lessonData['end_time'] as int,
+      final startTime = DateTime.fromMillisecondsSinceEpoch(
+        lessonData['start_time'] as int,
       );
       final isPaid = (lessonData['is_paid'] as int) == 1;
       final price = (lessonData['price'] as num).toDouble();
 
-      if (isPaid) {
-        paidLessonsCount++;
+      if (isPaid && startTime.isBefore(now)) {
+        conductedLessonsCount++;
       }
 
-      if (endTime.isBefore(now)) {
-        completedLessonsCount++;
-        if (isPaid) {
-          totalEarned += price;
-        } else {
-          totalExpected += price;
-        }
+      if (isPaid) {
+        totalRevenueValue += price;
       }
     }
 
     if (!mounted) return;
     setState(() {
-      _completedLessons = completedLessonsCount;
-      _paidLessons = paidLessonsCount;
-      _totalStudents = students.length;
-      _earnedIncome = totalEarned;
-      _expectedIncome = totalExpected;
+      _conductedLessons = conductedLessonsCount;
+      _totalStudents = allStudents.length;
+      _activeStudents = activeStudentsList.length;
+      _totalRevenue = totalRevenueValue;
       _isLoading = false;
     });
   }
@@ -78,58 +71,52 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           child: Text('Аналитика', style: TextStyle(fontSize: 24)),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadAnalyticsData,
-              child: ListView(
-                padding: const EdgeInsets.all(16.0),
-                children: [
-                  _buildStatCard(
-                    'Проведено занятий',
-                    _completedLessons.toString(),
-                    Icons.class_outlined,
-                  ),
-                  _buildStatCard(
-                    'Оплачено занятий',
-                    _paidLessons.toString(),
-                    Icons.payment,
-                  ),
-                  _buildStatCard(
-                    'Активных учеников',
-                    _totalStudents.toString(),
-                    Icons.people_outline,
-                  ),
-                  _buildStatCard(
-                    'Доход',
-                    '', // Оставляем пустым, так как будем кастомный trailing
-                    Icons.monetization_on_outlined,
-                    trailingWidget: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisAlignment: MainAxisAlignment.center,
+      body: Column(
+        children: [
+          Container(
+            height: 20,
+            decoration: const BoxDecoration(
+              color: Colors.deepPurple,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : RefreshIndicator(
+                    onRefresh: _loadAnalyticsData,
+                    child: ListView(
+                      padding: const EdgeInsets.all(16.0),
                       children: [
-                        Text(
-                          'Получено: ${_earnedIncome.toStringAsFixed(0)} руб.',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                            fontSize: 16,
-                          ),
+                        _buildStatCard(
+                          'Проведено занятий',
+                          _conductedLessons.toString(),
+                          Icons.class_outlined,
                         ),
-                        Text(
-                          'Ожидается: ${_expectedIncome.toStringAsFixed(0)} руб.',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange,
-                            fontSize: 16,
-                          ),
+                        _buildStatCard(
+                          'Всего учеников',
+                          _totalStudents.toString(),
+                          Icons.people_alt_outlined,
+                        ),
+                        _buildStatCard(
+                          'Активных учеников',
+                          _activeStudents.toString(),
+                          Icons.people_outline,
+                        ),
+                        _buildStatCard(
+                          'Доход за всё время',
+                          '${_totalRevenue.toStringAsFixed(0)} руб.',
+                          Icons.monetization_on_outlined,
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
+          ),
+        ],
+      ),
     );
   }
 

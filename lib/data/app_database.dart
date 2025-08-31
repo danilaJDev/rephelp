@@ -28,7 +28,7 @@ class AppDatabase {
 
     return await openDatabase(
       path,
-      version: 9,
+      version: 10,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -63,7 +63,7 @@ class AppDatabase {
         price REAL,
         is_homework_sent INTEGER NOT NULL DEFAULT 0,
         is_hidden INTEGER NOT NULL DEFAULT 0,
-        FOREIGN KEY (student_id) REFERENCES students(id)
+        FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE SET NULL
       )
     ''');
   }
@@ -186,6 +186,32 @@ class AppDatabase {
 
       await db.execute('DROP TABLE lessons_old');
     }
+    if (oldVersion < 10) {
+      // Recreate the table to add the ON DELETE SET NULL constraint
+      await db.execute('ALTER TABLE lessons RENAME TO lessons_old');
+      await db.execute('''
+      CREATE TABLE lessons(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER,
+        student_name TEXT,
+        student_surname TEXT,
+        start_time INTEGER,
+        end_time INTEGER,
+        is_paid INTEGER,
+        notes TEXT,
+        price REAL,
+        is_homework_sent INTEGER NOT NULL DEFAULT 0,
+        is_hidden INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE SET NULL
+      )
+    ''');
+      final List<Map<String, dynamic>> oldLessons =
+          await db.query('lessons_old');
+      for (final oldLesson in oldLessons) {
+        await db.insert('lessons', oldLesson);
+      }
+      await db.execute('DROP TABLE lessons_old');
+    }
   }
 
   Future<int> insertStudent(Student student) async {
@@ -252,21 +278,16 @@ class AppDatabase {
 
   Future<int> deleteStudent(int id) async {
     final db = await database;
-    return db.transaction((txn) async {
-      final now = DateTime.now().millisecondsSinceEpoch;
-      await txn.delete(
-        'lessons',
-        where: 'student_id = ? AND start_time > ? AND is_paid = 0',
-        whereArgs: [id, now],
-      );
-      await txn.update(
-        'lessons',
-        {'student_id': null},
-        where: 'student_id = ? AND (start_time <= ? OR is_paid = 1)',
-        whereArgs: [id, now],
-      );
-      return await txn.delete('students', where: 'id = ?', whereArgs: [id]);
-    });
+    // First, delete future, unpaid lessons associated with the student.
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await db.delete(
+      'lessons',
+      where: 'student_id = ? AND start_time > ? AND is_paid = 0',
+      whereArgs: [id, now],
+    );
+    // Now, delete the student. The ON DELETE SET NULL constraint will handle
+    // setting student_id to null for all remaining (past or paid) lessons.
+    return await db.delete('students', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<Student?> getStudentById(int id) async {

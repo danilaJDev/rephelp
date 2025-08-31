@@ -84,46 +84,76 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   }
 
   Future<void> _saveLesson() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    final student = _selectedStudent;
-    if ((student == null || student.id == null) && !_isHistorical) {
-      return;
-    }
-    if (_startTime == null || _endTime == null) {
+    if (!_formKey.currentState!.validate() ||
+        _startTime == null ||
+        _endTime == null) {
       return;
     }
 
     final database = AppDatabase();
+    final lessonStartTime = DateTime(
+      _lessonDate.year,
+      _lessonDate.month,
+      _lessonDate.day,
+      _startTime!.hour,
+      _startTime!.minute,
+    );
+    final lessonEndTime = DateTime(
+      _lessonDate.year,
+      _lessonDate.month,
+      _lessonDate.day,
+      _endTime!.hour,
+      _endTime!.minute,
+    );
 
-    if (_applyToFutureLessons && widget.lessonToEdit != null && student != null) {
-      final originalLesson = widget.lessonToEdit!;
+    // Handle historical lessons first, as they have simpler logic.
+    if (_isHistorical) {
+      final lessonToUpdate = Lesson(
+        id: widget.lessonToEdit!.id,
+        studentId: null,
+        studentName: widget.lessonToEdit!.studentName,
+        studentSurname: widget.lessonToEdit!.studentSurname,
+        startTime: lessonStartTime,
+        endTime: lessonEndTime,
+        isPaid: widget.lessonToEdit!.isPaid,
+        notes: _notesController.text,
+        price: double.tryParse(_priceController.text),
+      );
+      await database.updateLesson(lessonToUpdate);
+      if (mounted) Navigator.pop(context, true);
+      return;
+    }
+
+    // For all other cases, a student must be selected.
+    final student = _selectedStudent;
+    if (student == null || student.id == null) {
+      return; // Should be caught by validation, but good to have.
+    }
+
+    // Mass update logic
+    if (_applyToFutureLessons && widget.lessonToEdit != null) {
       final lessonsToUpdate = await database.getFutureRecurringLessons(
-        originalLesson.studentId!,
-        originalLesson.startTime,
+        student.id!,
+        widget.lessonToEdit!.startTime,
       );
       final dayDifference =
-          _lessonDate.weekday - originalLesson.startTime.weekday;
+          _lessonDate.weekday - widget.lessonToEdit!.startTime.weekday;
 
       final updatedLessons = lessonsToUpdate.map((lesson) {
-        final newDate = lesson.startTime.add(Duration(days: dayDifference));
         final newStartTime = DateTime(
-          newDate.year,
-          newDate.month,
-          newDate.day,
+          lesson.startTime.year,
+          lesson.startTime.month,
+          lesson.startTime.day,
           _startTime!.hour,
           _startTime!.minute,
-        );
+        ).add(Duration(days: dayDifference));
         final newEndTime = DateTime(
-          newDate.year,
-          newDate.month,
-          newDate.day,
+          lesson.startTime.year,
+          lesson.startTime.month,
+          lesson.startTime.day,
           _endTime!.hour,
           _endTime!.minute,
-        );
-
+        ).add(Duration(days: dayDifference));
         return Lesson(
           id: lesson.id,
           studentId: student.id!,
@@ -140,6 +170,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
       if (updatedLessons.isNotEmpty) {
         await database.updateLessons(updatedLessons);
       }
+      // Duplication logic
     } else if (_duplicateLessons &&
         _duplicationStartDate != null &&
         _duplicationEndDate != null) {
@@ -153,20 +184,10 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
               studentId: student.id!,
               studentName: student.name,
               studentSurname: student.surname,
-              startTime: DateTime(
-                currentDate.year,
-                currentDate.month,
-                currentDate.day,
-                _startTime!.hour,
-                _startTime!.minute,
-              ),
-              endTime: DateTime(
-                currentDate.year,
-                currentDate.month,
-                currentDate.day,
-                _endTime!.hour,
-                _endTime!.minute,
-              ),
+              startTime: DateTime(currentDate.year, currentDate.month,
+                  currentDate.day, _startTime!.hour, _startTime!.minute),
+              endTime: DateTime(currentDate.year, currentDate.month,
+                  currentDate.day, _endTime!.hour, _endTime!.minute),
               notes: _notesController.text,
               price: double.tryParse(_priceController.text),
             ),
@@ -174,41 +195,20 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         }
         currentDate = currentDate.add(const Duration(days: 1));
       }
-
       if (widget.lessonToEdit != null) {
         await database.deleteLesson(widget.lessonToEdit!.id!);
       }
-
       if (lessonsToSave.isNotEmpty) {
         await database.insertLessons(lessonsToSave);
       }
+      // Default: Update a single lesson or create a new one
     } else {
-      final lessonStartTime = DateTime(
-        _lessonDate.year,
-        _lessonDate.month,
-        _lessonDate.day,
-        _startTime!.hour,
-        _startTime!.minute,
-      );
-
-      final lessonEndTime = DateTime(
-        _lessonDate.year,
-        _lessonDate.month,
-        _lessonDate.day,
-        _endTime!.hour,
-        _endTime!.minute,
-      );
-
       if (widget.lessonToEdit != null) {
         final lessonToUpdate = Lesson(
           id: widget.lessonToEdit!.id,
-          studentId: _isHistorical ? null : student!.id,
-          studentName: _isHistorical
-              ? widget.lessonToEdit!.studentName
-              : student!.name,
-          studentSurname: _isHistorical
-              ? widget.lessonToEdit!.studentSurname
-              : student!.surname,
+          studentId: student.id!,
+          studentName: student.name,
+          studentSurname: student.surname,
           startTime: lessonStartTime,
           endTime: lessonEndTime,
           isPaid: widget.lessonToEdit!.isPaid,
@@ -218,7 +218,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         await database.updateLesson(lessonToUpdate);
       } else {
         final newLesson = Lesson(
-          studentId: student!.id!,
+          studentId: student.id!,
           studentName: student.name,
           studentSurname: student.surname,
           startTime: lessonStartTime,
@@ -280,19 +280,19 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                   _buildPickerTile(
                     label: 'Дата',
                     value: DateFormat('dd.MM.yy').format(_lessonDate),
-                    onTap: _selectLessonDate,
+                    onTap: _isHistorical ? null : _selectLessonDate,
                   ),
                   const Divider(height: 1, color: Colors.grey),
                   _buildPickerTile(
                     label: 'Начало',
                     value: _startTime?.format(context) ?? 'Выберите время',
-                    onTap: () => _selectTime(true),
+                    onTap: _isHistorical ? null : () => _selectTime(true),
                   ),
                   const Divider(height: 1, color: Colors.grey),
                   _buildPickerTile(
                     label: 'Конец',
                     value: _endTime?.format(context) ?? 'Выберите время',
-                    onTap: () => _selectTime(false),
+                    onTap: _isHistorical ? null : () => _selectTime(false),
                   ),
                 ],
               ),
@@ -466,7 +466,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   Widget _buildPickerTile({
     required String label,
     required String value,
-    required VoidCallback onTap,
+    VoidCallback? onTap,
   }) {
     return InkWell(
       onTap: onTap,
@@ -475,8 +475,14 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(fontSize: 16)),
-            Text(value, style: const TextStyle(fontSize: 16)),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 16,
+                    color: onTap == null ? Colors.grey : Colors.black)),
+            Text(value,
+                style: TextStyle(
+                    fontSize: 16,
+                    color: onTap == null ? Colors.grey : Colors.black)),
           ],
         ),
       ),

@@ -28,7 +28,7 @@ class AppDatabase {
 
     return await openDatabase(
       path,
-      version: 8,
+      version: 10,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -54,6 +54,8 @@ class AppDatabase {
       CREATE TABLE lessons(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id INTEGER,
+        student_name TEXT,
+        student_surname TEXT,
         start_time INTEGER,
         end_time INTEGER,
         is_paid INTEGER,
@@ -61,7 +63,7 @@ class AppDatabase {
         price REAL,
         is_homework_sent INTEGER NOT NULL DEFAULT 0,
         is_hidden INTEGER NOT NULL DEFAULT 0,
-        FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+        FOREIGN KEY (student_id) REFERENCES students(id)
       )
     ''');
   }
@@ -133,6 +135,92 @@ class AppDatabase {
         'ALTER TABLE lessons ADD COLUMN is_hidden INTEGER NOT NULL DEFAULT 0',
       );
     }
+    if (oldVersion < 9) {
+      await db.execute('ALTER TABLE lessons RENAME TO lessons_old');
+      await db.execute('''
+      CREATE TABLE lessons(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER,
+        student_name TEXT,
+        student_surname TEXT,
+        start_time INTEGER,
+        end_time INTEGER,
+        is_paid INTEGER,
+        notes TEXT,
+        price REAL,
+        is_homework_sent INTEGER NOT NULL DEFAULT 0,
+        is_hidden INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE SET NULL
+      )
+    ''');
+
+      final List<Map<String, dynamic>> oldLessons =
+          await db.query('lessons_old');
+      for (final oldLesson in oldLessons) {
+        final student = await db.query(
+          'students',
+          where: 'id = ?',
+          whereArgs: [oldLesson['student_id']],
+        );
+        final studentName = student.first['name'] as String?;
+        final studentSurname = student.first['surname'] as String?;
+
+        await db.insert('lessons', {
+          'id': oldLesson['id'],
+          'student_id': oldLesson['student_id'],
+          'student_name': studentName,
+          'student_surname': studentSurname,
+          'start_time': oldLesson['start_time'],
+          'end_time': oldLesson['end_time'],
+          'is_paid': oldLesson['is_paid'],
+          'notes': oldLesson['notes'],
+          'price': oldLesson['price'],
+          'is_homework_sent': oldLesson['is_homework_sent'],
+          'is_hidden': oldLesson['is_hidden'],
+        });
+      }
+
+      await db.execute('DROP TABLE lessons_old');
+    }
+    if (oldVersion < 10) {
+      await db.execute('ALTER TABLE lessons RENAME TO lessons_old');
+      await db.execute('''
+      CREATE TABLE lessons(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER,
+        student_name TEXT,
+        student_surname TEXT,
+        start_time INTEGER,
+        end_time INTEGER,
+        is_paid INTEGER,
+        notes TEXT,
+        price REAL,
+        is_homework_sent INTEGER NOT NULL DEFAULT 0,
+        is_hidden INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (student_id) REFERENCES students(id)
+      )
+    ''');
+
+      final List<Map<String, dynamic>> oldLessons =
+          await db.query('lessons_old');
+      for (final oldLesson in oldLessons) {
+        await db.insert('lessons', {
+          'id': oldLesson['id'],
+          'student_id': oldLesson['student_id'],
+          'student_name': oldLesson['student_name'],
+          'student_surname': oldLesson['student_surname'],
+          'start_time': oldLesson['start_time'],
+          'end_time': oldLesson['end_time'],
+          'is_paid': oldLesson['is_paid'],
+          'notes': oldLesson['notes'],
+          'price': oldLesson['price'],
+          'is_homework_sent': oldLesson['is_homework_sent'],
+          'is_hidden': oldLesson['is_hidden'],
+        });
+      }
+
+      await db.execute('DROP TABLE lessons_old');
+    }
   }
 
   Future<int> insertStudent(Student student) async {
@@ -155,6 +243,14 @@ class AppDatabase {
 
   Future<int> setStudentArchived(int id, bool isArchived) async {
     final db = await database;
+    if (isArchived) {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await db.delete(
+        'lessons',
+        where: 'student_id = ? AND start_time > ?',
+        whereArgs: [id, now],
+      );
+    }
     return await db.update(
       'students',
       {'is_archived': isArchived ? 1 : 0},
@@ -165,17 +261,61 @@ class AppDatabase {
 
   Future<int> updateStudent(Student student) async {
     final db = await database;
-    return await db.update(
+    final oldStudentData = await getStudentById(student.id!);
+    final result = await db.update(
       'students',
       student.toMap(),
       where: 'id = ?',
       whereArgs: [student.id],
     );
+
+    if (oldStudentData != null && oldStudentData.price != student.price) {
+      final tomorrow = DateTime.now().add(const Duration(days: 1));
+      final startOfTomorrow =
+          DateTime(tomorrow.year, tomorrow.month, tomorrow.day)
+              .millisecondsSinceEpoch;
+      await db.update(
+        'lessons',
+        {'price': student.price},
+        where: 'student_id = ? AND start_time >= ? AND is_paid = 0',
+        whereArgs: [student.id, startOfTomorrow],
+      );
+    }
+
+    return result;
   }
 
   Future<int> deleteStudent(int id) async {
     final db = await database;
-    return await db.delete('students', where: 'id = ?', whereArgs: [id]);
+    return db.transaction((txn) async {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await txn.delete(
+        'lessons',
+        where: 'student_id = ? AND start_time > ? AND is_paid = 0',
+        whereArgs: [id, now],
+      );
+      await txn.update(
+        'lessons',
+        {'student_id': null},
+        where: 'student_id = ? AND (start_time <= ? OR is_paid = 1)',
+        whereArgs: [id, now],
+      );
+      return await txn.delete('students', where: 'id = ?', whereArgs: [id]);
+    });
+  }
+
+  Future<Student?> getStudentById(int id) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'students',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isNotEmpty) {
+      return Student.fromMap(maps.first);
+    }
+    return null;
   }
 
   Future<int> insertLesson(Lesson lesson) async {
@@ -237,10 +377,10 @@ class AppDatabase {
       lessons.start_time,
       lessons.end_time,
       lessons.is_paid,
-      students.name,
+      COALESCE(students.name, lessons.student_name) as name,
       lessons.price
     FROM lessons
-    INNER JOIN students ON lessons.student_id = students.id
+    LEFT JOIN students ON lessons.student_id = students.id
     WHERE lessons.id = ?
   ''',
       [lessonId],
@@ -250,6 +390,20 @@ class AppDatabase {
       return result.first;
     }
     return {};
+  }
+
+  Future<Lesson?> getLessonById(int id) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'lessons',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isNotEmpty) {
+      return Lesson.fromMap(maps.first);
+    }
+    return null;
   }
 
   Future<void> updateLesson(Lesson lesson) async {
@@ -349,7 +503,7 @@ class AppDatabase {
       lessons.price,
       students.autoPay
     FROM lessons
-    INNER JOIN students ON lessons.student_id = students.id
+    LEFT JOIN students ON lessons.student_id = students.id
     ''';
 
     List<dynamic> args = [];

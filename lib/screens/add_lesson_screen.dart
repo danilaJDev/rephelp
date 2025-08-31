@@ -28,6 +28,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
   late TextEditingController _notesController;
+  late TextEditingController _priceController;
   bool _isFormValid = false;
 
   bool _duplicateLessons = false;
@@ -40,6 +41,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
     super.initState();
     _lessonDate = widget.selectedDate;
     _notesController = TextEditingController();
+    _priceController = TextEditingController();
 
     if (widget.lessonToEdit != null) {
       final lesson = widget.lessonToEdit!;
@@ -47,6 +49,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
       _startTime = TimeOfDay.fromDateTime(lesson.startTime);
       _endTime = TimeOfDay.fromDateTime(lesson.endTime);
       _notesController.text = lesson.notes ?? '';
+      _priceController.text = lesson.price?.toString() ?? '';
       try {
         _selectedStudent = widget.students.firstWhere(
           (s) => s.id == lesson.studentId,
@@ -56,6 +59,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
       }
     } else if (widget.students.isNotEmpty) {
       _selectedStudent = widget.students.first;
+      _priceController.text = _selectedStudent?.price.toString() ?? '';
     }
     _validateForm();
   }
@@ -119,11 +123,13 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         return Lesson(
           id: lesson.id,
           studentId: lesson.studentId,
+          studentName: student.name,
+          studentSurname: student.surname,
           startTime: newStartTime,
           endTime: newEndTime,
           isPaid: lesson.isPaid,
           notes: _notesController.text,
-          price: student.price,
+          price: double.tryParse(_priceController.text),
         );
       }).toList();
 
@@ -141,6 +147,8 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
           lessonsToSave.add(
             Lesson(
               studentId: student.id!,
+              studentName: student.name,
+              studentSurname: student.surname,
               startTime: DateTime(
                 currentDate.year,
                 currentDate.month,
@@ -156,7 +164,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                 _endTime!.minute,
               ),
               notes: _notesController.text,
-              price: student.price,
+              price: double.tryParse(_priceController.text),
             ),
           );
         }
@@ -191,20 +199,24 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         final lessonToUpdate = Lesson(
           id: widget.lessonToEdit!.id,
           studentId: student.id!,
+          studentName: student.name,
+          studentSurname: student.surname,
           startTime: lessonStartTime,
           endTime: lessonEndTime,
           isPaid: widget.lessonToEdit!.isPaid,
           notes: _notesController.text,
-          price: student.price,
+          price: double.tryParse(_priceController.text),
         );
         await database.updateLesson(lessonToUpdate);
       } else {
         final newLesson = Lesson(
           studentId: student.id!,
+          studentName: student.name,
+          studentSurname: student.surname,
           startTime: lessonStartTime,
           endTime: lessonEndTime,
           notes: _notesController.text,
-          price: student.price,
+          price: double.tryParse(_priceController.text),
         );
         await database.insertLesson(newLesson);
       }
@@ -311,6 +323,9 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                   onChanged: (Student? newValue) {
                     setState(() {
                       _selectedStudent = newValue;
+                      if (newValue != null) {
+                        _priceController.text = newValue.price.toString();
+                      }
                     });
                     _validateForm();
                   },
@@ -329,6 +344,39 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                   isExpanded: true,
                   validator: (value) =>
                       value == null ? 'Пожалуйста, выберите ученика' : null,
+                ),
+              ),
+            ),
+
+            _buildSectionTitle('Детали'),
+            Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _priceController,
+                      decoration: const InputDecoration(
+                        labelText: 'Цена',
+                        border: InputBorder.none,
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    const Divider(),
+                    TextFormField(
+                      controller: _notesController,
+                      decoration: const InputDecoration(
+                        hintText: 'Добавьте примечание к занятию...',
+                        border: InputBorder.none,
+                      ),
+                      maxLines: 3,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -394,26 +442,6 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                     ),
                   ],
                 ],
-              ),
-            ),
-
-            _buildSectionTitle('Примечания'),
-            Card(
-              color: Colors.white,
-              margin: const EdgeInsets.symmetric(vertical: 4.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextFormField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(
-                    hintText: 'Добавьте примечание к занятию...',
-                    border: InputBorder.none,
-                  ),
-                  maxLines: 3,
-                ),
               ),
             ),
 

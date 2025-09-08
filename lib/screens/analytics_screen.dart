@@ -45,9 +45,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
       if (isPaid && startTime.isBefore(now)) {
         conductedLessonsCount++;
-      }
-
-      if (isPaid) {
         totalRevenueValue += price;
       }
     }

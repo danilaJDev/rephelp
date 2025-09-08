@@ -98,8 +98,11 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         originalLesson.studentId,
         originalLesson.startTime,
       );
-      final dayDifference =
+      var dayDifference =
           _lessonDate.weekday - originalLesson.startTime.weekday;
+      if (dayDifference < 0) {
+        dayDifference += 7;
+      }
 
       final updatedLessons = lessonsToUpdate.map((lesson) {
         final newDate = lesson.startTime.add(Duration(days: dayDifference));

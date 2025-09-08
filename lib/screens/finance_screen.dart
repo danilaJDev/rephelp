@@ -295,7 +295,15 @@ class _ClassesViewState extends State<ClassesView> {
     }
 
     if (updated) {
-      allLessons = await _database.getFinancialData();
+      allLessons = allLessons.map((lesson) {
+        final endTime = DateTime.fromMillisecondsSinceEpoch(lesson['end_time']);
+        final isPaid = lesson['is_paid'] == 1;
+        final autoPay = lesson['autoPay'] == 1;
+        if (autoPay && !isPaid && endTime.isBefore(now)) {
+          return {...lesson, 'is_paid': 1};
+        }
+        return lesson;
+      }).toList();
     }
 
     Map<String, List<Map<String, dynamic>>> groupedData = {};

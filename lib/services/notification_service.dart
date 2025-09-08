@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:rephelp/models/lesson.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -17,17 +18,28 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  final MethodChannel _channel =
+      const MethodChannel('com.example.rephelp/notifications');
+
+  Future<void> checkAndRequestExactAlarmPermission() async {
+    final bool hasPermission =
+        await _channel.invokeMethod('checkExactAlarmPermission');
+    if (!hasPermission) {
+      await _channel.invokeMethod('requestExactAlarmPermission');
+    }
+  }
 
   Future<void> init() async {
     await _configureLocalTimeZone();
+    await checkAndRequestExactAlarmPermission();
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false,
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
     );
 
     const InitializationSettings initializationSettings =

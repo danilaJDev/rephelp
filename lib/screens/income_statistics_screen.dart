@@ -47,12 +47,15 @@ class _IncomeStatisticsScreenState extends State<IncomeStatisticsScreen> {
     );
     if (!mounted) return;
 
+    setState(() {
+      _incomeData = data;
+    });
+
     final monthly = _groupByMonth(range);
     final total = monthly.values.fold(0.0, (a, b) => a + b);
     _prevTotal = _prevTotal == 0 ? total : _prevTotal;
 
     setState(() {
-      _incomeData = data;
       _isLoading = false;
     });
   }

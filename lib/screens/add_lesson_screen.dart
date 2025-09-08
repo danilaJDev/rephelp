@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:rephelp/models/lesson.dart';
 import 'package:rephelp/models/student.dart';
+import 'package:rephelp/services/notification_service.dart';
 import 'package:rephelp/widgets/custom_app_bar.dart';
 
 class AddLessonScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class AddLessonScreen extends StatefulWidget {
 
 class _AddLessonScreenState extends State<AddLessonScreen> {
   final _formKey = GlobalKey<FormState>();
+  final NotificationService _notificationService = NotificationService();
   Student? _selectedStudent;
   late DateTime _lessonDate;
   TimeOfDay? _startTime;
@@ -96,8 +98,11 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
         originalLesson.studentId,
         originalLesson.startTime,
       );
-      final dayDifference =
+      var dayDifference =
           _lessonDate.weekday - originalLesson.startTime.weekday;
+      if (dayDifference < 0) {
+        dayDifference += 7;
+      }
 
       final updatedLessons = lessonsToUpdate.map((lesson) {
         final newDate = lesson.startTime.add(Duration(days: dayDifference));
@@ -128,7 +133,16 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
       }).toList();
 
       if (updatedLessons.isNotEmpty) {
+        for (var lesson in lessonsToUpdate) {
+          await _notificationService.cancelNotification(lesson.id!);
+        }
         await database.updateLessons(updatedLessons);
+        for (var lesson in updatedLessons) {
+          await _notificationService.scheduleLessonNotification(
+            lesson,
+            '${student.name} ${student.surname ?? ''}',
+          );
+        }
       }
     } else if (_duplicateLessons &&
         _duplicationStartDate != null &&
@@ -164,11 +178,26 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
       }
 
       if (widget.lessonToEdit != null) {
+        await _notificationService.cancelNotification(widget.lessonToEdit!.id!);
         await database.deleteLesson(widget.lessonToEdit!.id!);
       }
 
       if (lessonsToSave.isNotEmpty) {
-        await database.insertLessons(lessonsToSave);
+        for (var lesson in lessonsToSave) {
+          final newId = await database.insertLesson(lesson);
+          final lessonWithId = Lesson(
+            id: newId,
+            studentId: lesson.studentId,
+            startTime: lesson.startTime,
+            endTime: lesson.endTime,
+            notes: lesson.notes,
+            price: lesson.price,
+          );
+          await _notificationService.scheduleLessonNotification(
+            lessonWithId,
+            '${student.name} ${student.surname ?? ''}',
+          );
+        }
       }
     } else {
       final lessonStartTime = DateTime(
@@ -198,6 +227,11 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
           price: student.price,
         );
         await database.updateLesson(lessonToUpdate);
+        await _notificationService.cancelNotification(lessonToUpdate.id!);
+        await _notificationService.scheduleLessonNotification(
+          lessonToUpdate,
+          '${student.name} ${student.surname ?? ''}',
+        );
       } else {
         final newLesson = Lesson(
           studentId: student.id!,
@@ -206,7 +240,19 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
           notes: _notesController.text,
           price: student.price,
         );
-        await database.insertLesson(newLesson);
+        final lessonId = await database.insertLesson(newLesson);
+        final lessonWithId = Lesson(
+          id: lessonId,
+          studentId: newLesson.studentId,
+          startTime: newLesson.startTime,
+          endTime: newLesson.endTime,
+          notes: newLesson.notes,
+          price: newLesson.price,
+        );
+        await _notificationService.scheduleLessonNotification(
+          lessonWithId,
+          '${student.name} ${student.surname ?? ''}',
+        );
       }
     }
 

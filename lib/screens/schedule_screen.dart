@@ -52,15 +52,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
   Future<void> _loadLessonsForDay(DateTime day) async {
     final lessons = await _database.getLessonsByDate(day);
+    final studentMap = {for (var s in _students) s.id: s};
     final List<Map<String, dynamic>> lessonsWithStudents = [];
     for (var lesson in lessons) {
-      try {
-        final student = _students.firstWhere((s) => s.id == lesson.studentId);
+      if (lesson.studentId != null &&
+          studentMap.containsKey(lesson.studentId)) {
+        final student = studentMap[lesson.studentId]!;
         lessonsWithStudents.add({'lesson': lesson, 'student': student});
-      } catch (e) {
-        print(
-          'Error: Student with id ${lesson.studentId} not found for lesson ${lesson.id}',
-        );
       }
     }
     if (!mounted) return;
@@ -101,21 +99,23 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   ) {
     final Map<DateTime, List<Map<String, dynamic>>> data = {};
     for (var lesson in lessons) {
-      try {
-        final student = students.firstWhere((s) => s.id == lesson.studentId);
-        final day = DateTime(
-          lesson.startTime.year,
-          lesson.startTime.month,
-          lesson.startTime.day,
-        );
-        final lessonWithStudent = {'lesson': lesson, 'student': student};
-        if (data.containsKey(day)) {
-          data[day]!.add(lessonWithStudent);
-        } else {
-          data[day] = [lessonWithStudent];
-        }
-      } catch (e) {
-        print('Student not found for lesson ${lesson.id}');
+      final studentIndex = students.indexWhere((s) => s.id == lesson.studentId);
+      if (studentIndex == -1) {
+        continue;
+      }
+      final student = students[studentIndex];
+
+      final day = DateTime(
+        lesson.startTime.year,
+        lesson.startTime.month,
+        lesson.startTime.day,
+      );
+      final lessonWithStudent = {'lesson': lesson, 'student': student};
+
+      if (data.containsKey(day)) {
+        data[day]!.add(lessonWithStudent);
+      } else {
+        data[day] = [lessonWithStudent];
       }
     }
     return data;

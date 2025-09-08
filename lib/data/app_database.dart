@@ -117,9 +117,11 @@ class AppDatabase {
       }
       await db.execute('DROP TABLE lessons_old');
     }
+
     if (oldVersion < 5) {
       await db.execute('ALTER TABLE lessons ADD COLUMN notes TEXT');
     }
+
     if (oldVersion < 6) {
       await db.execute('ALTER TABLE lessons ADD COLUMN price REAL');
     }
@@ -175,6 +177,14 @@ class AppDatabase {
 
   Future<int> deleteStudent(int id) async {
     final db = await database;
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    await db.delete(
+      'lessons',
+      where: 'student_id = ? AND start_time > ?',
+      whereArgs: [id, now],
+    );
+
     return await db.delete('students', where: 'id = ?', whereArgs: [id]);
   }
 
@@ -240,7 +250,7 @@ class AppDatabase {
       students.name,
       lessons.price
     FROM lessons
-    INNER JOIN students ON lessons.student_id = students.id
+    LEFT JOIN students ON lessons.student_id = students.id
     WHERE lessons.id = ?
   ''',
       [lessonId],

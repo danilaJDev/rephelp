@@ -314,11 +314,17 @@ class AppDatabase {
     });
   }
 
-  Future<void> deleteFutureRecurringLessons(
+  Future<List<Lesson>> deleteFutureRecurringLessons(
     int studentId,
     DateTime startTime,
   ) async {
     final db = await database;
+    final lessonsToDelete = await getFutureRecurringLessons(studentId, startTime);
+
+    if (lessonsToDelete.isEmpty) {
+      return [];
+    }
+
     final startTimeMillis = startTime.millisecondsSinceEpoch;
     // Dart: Mon=1..Sun=7, SQLite's strftime('%w',...): Sun=0..Sat=6
     final sqliteWeekday = (startTime.weekday % 7).toString();
@@ -332,6 +338,22 @@ class AppDatabase {
       ''',
       [studentId, startTimeMillis, sqliteWeekday],
     );
+
+    return lessonsToDelete;
+  }
+
+  Future<Student?> getStudentById(int id) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'students',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isNotEmpty) {
+      return Student.fromMap(maps.first);
+    }
+    return null;
   }
 
   Future<void> updateLessonIsPaid(int lessonId, bool isPaid) async {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:rephelp/services/notification_service.dart';
 import 'package:rephelp/widgets/custom_app_bar.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:rephelp/data/app_database.dart';
@@ -20,6 +21,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   final AppDatabase _database = AppDatabase();
+  final NotificationService _notificationService = NotificationService();
   List<Map<String, dynamic>> _lessons = [];
   List<Student> _students = [];
   Map<DateTime, List<Map<String, dynamic>>> _allLessons = {};
@@ -530,6 +532,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               child: const Text('Только это'),
               onPressed: () async {
                 Navigator.of(context).pop();
+                await _notificationService.cancelNotification(lesson.id!);
                 await _database.deleteLesson(lesson.id!);
                 await _loadAllData();
               },
@@ -538,10 +541,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               child: const Text('Это и все последующие'),
               onPressed: () async {
                 Navigator.of(context).pop();
-                await _database.deleteFutureRecurringLessons(
+                final lessonsToDelete =
+                    await _database.deleteFutureRecurringLessons(
                   student.id!,
                   lesson.startTime,
                 );
+                for (var l in lessonsToDelete) {
+                  await _notificationService.cancelNotification(l.id!);
+                }
                 await _loadAllData();
               },
             ),

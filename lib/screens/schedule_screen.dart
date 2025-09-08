@@ -55,8 +55,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     final studentMap = {for (var s in _students) s.id: s};
     final List<Map<String, dynamic>> lessonsWithStudents = [];
     for (var lesson in lessons) {
-      if (lesson.studentId != null &&
-          studentMap.containsKey(lesson.studentId)) {
+      if (studentMap.containsKey(lesson.studentId)) {
         final student = studentMap[lesson.studentId]!;
         lessonsWithStudents.add({'lesson': lesson, 'student': student});
       }

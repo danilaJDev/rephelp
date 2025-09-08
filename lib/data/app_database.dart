@@ -98,6 +98,10 @@ class AppDatabase {
           start_time INTEGER,
           end_time INTEGER,
           is_paid INTEGER,
+          notes TEXT,
+          price REAL,
+          is_homework_sent INTEGER NOT NULL DEFAULT 0,
+          is_hidden INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
         )
       ''');
@@ -118,22 +122,24 @@ class AppDatabase {
       await db.execute('DROP TABLE lessons_old');
     }
 
-    if (oldVersion < 5) {
-      await db.execute('ALTER TABLE lessons ADD COLUMN notes TEXT');
-    }
+    if (oldVersion >= 4) {
+      if (oldVersion < 5) {
+        await db.execute('ALTER TABLE lessons ADD COLUMN notes TEXT');
+      }
 
-    if (oldVersion < 6) {
-      await db.execute('ALTER TABLE lessons ADD COLUMN price REAL');
-    }
-    if (oldVersion < 7) {
-      await db.execute(
-        'ALTER TABLE lessons ADD COLUMN is_homework_sent INTEGER NOT NULL DEFAULT 0',
-      );
-    }
-    if (oldVersion < 8) {
-      await db.execute(
-        'ALTER TABLE lessons ADD COLUMN is_hidden INTEGER NOT NULL DEFAULT 0',
-      );
+      if (oldVersion < 6) {
+        await db.execute('ALTER TABLE lessons ADD COLUMN price REAL');
+      }
+      if (oldVersion < 7) {
+        await db.execute(
+          'ALTER TABLE lessons ADD COLUMN is_homework_sent INTEGER NOT NULL DEFAULT 0',
+        );
+      }
+      if (oldVersion < 8) {
+        await db.execute(
+          'ALTER TABLE lessons ADD COLUMN is_hidden INTEGER NOT NULL DEFAULT 0',
+        );
+      }
     }
   }
 

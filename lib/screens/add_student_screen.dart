@@ -71,7 +71,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     final isValid =
         _nameController.text.isNotEmpty &&
         _priceController.text.isNotEmpty &&
-        double.tryParse(_priceController.text) != null;
+        double.tryParse(_priceController.text.replaceAll(',', '.')) != null;
     if (_isFormValid != isValid) {
       setState(() {
         _isFormValid = isValid;
@@ -88,7 +88,8 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
         phone: _phoneController.text,
         email: _emailController.text,
         messengers: jsonEncode(_messengers),
-        price: double.tryParse(_priceController.text) ?? 0.0,
+        price:
+            double.tryParse(_priceController.text.replaceAll(',', '.')) ?? 0.0,
         autoPay: _autoPay,
         notes: _notesController.text,
       );

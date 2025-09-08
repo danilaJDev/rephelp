@@ -286,14 +286,7 @@ class _StudentsScreenState extends State<StudentsScreen>
               children: [
                 const TextSpan(text: 'Перенести '),
                 TextSpan(
-                  text: student.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const TextSpan(text: ' '),
-                TextSpan(
-                  text: student.surname != null && student.surname!.isNotEmpty
-                      ? '${student.surname![0]}.'
-                      : '',
+                  text: '${student.name} ${student.surname ?? ''}',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const TextSpan(text: ' в архив?'),

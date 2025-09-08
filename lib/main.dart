@@ -11,7 +11,7 @@ import 'package:rephelp/screens/analytics_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('ru_RU', null);
+  await initializeDateFormatting('ru_RU');
   await AppDatabase().database;
   final notificationService = NotificationService();
   await notificationService.init();

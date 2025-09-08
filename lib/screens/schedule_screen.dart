@@ -211,12 +211,19 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       itemCount: sortedDays.length,
       itemBuilder: (context, index) {
         final day = sortedDays[index];
-        final lessons = _allLessons[day]!;
+        final lessons = _allLessons[day]!.where((lessonData) {
+          final lesson = lessonData['lesson'] as Lesson;
+          return !lesson.isHidden;
+        }).toList();
+
+        if (lessons.isEmpty) return const SizedBox.shrink();
+
         lessons.sort(
           (a, b) => (a['lesson'] as Lesson).startTime.compareTo(
             (b['lesson'] as Lesson).startTime,
           ),
         );
+
         final formattedDate = DateFormat(
           'dd.MM.yyyy, EEEE',
           'ru_RU',
@@ -237,7 +244,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             ...lessons.map((lessonData) {
               final lesson = lessonData['lesson'] as Lesson;
               final student = lessonData['student'] as Student;
-              return _buildLessonCard(lesson, student);
+              return _buildLessonCard(lesson, student, source: 'list');
             }).toList(),
           ],
         );
@@ -245,11 +252,16 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     );
   }
 
-  Widget _buildLessonCard(Lesson lesson, Student student) {
+  Widget _buildLessonCard(
+    Lesson lesson,
+    Student student, {
+    String source = 'list',
+  }) {
     final startTime = DateFormat('HH:mm').format(lesson.startTime);
     final endTime = DateFormat('HH:mm').format(lesson.endTime);
     final studentName = '${student.name} ${student.surname ?? ''}';
     final hasNotes = lesson.notes != null && lesson.notes!.isNotEmpty;
+    final isPast = lesson.endTime.isBefore(DateTime.now());
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -259,7 +271,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         title: Text(
           '$startTime - $endTime',
           style: const TextStyle(
-            fontSize: 16,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
             color: Colors.deepPurple,
           ),
@@ -267,14 +279,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              studentName,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
+            Text(studentName, style: const TextStyle(fontSize: 16)),
             if (hasNotes) ...[
               const SizedBox(height: 6),
               Row(
@@ -306,11 +311,160 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             ],
           ],
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.more_vert),
-          onPressed: () => _showLessonMenu(context, lesson, student),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isPast)
+              Container(
+                width: 45,
+                height: 45,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: lesson.isHomeworkSent ? Colors.green : Colors.orange,
+                    width: 2,
+                  ),
+                  color: lesson.isHomeworkSent
+                      ? Colors.green
+                      : Colors.transparent,
+                ),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: Icon(
+                    Icons.home,
+                    color: lesson.isHomeworkSent ? Colors.white : Colors.orange,
+                    size: 24,
+                  ),
+                  onPressed: () => _showHomeworkConfirmationDialog(lesson),
+                ),
+              ),
+            const SizedBox(width: 8),
+
+            if (source == 'list') ...[
+              if (lesson.isHomeworkSent)
+                Container(
+                  width: 45,
+                  height: 45,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey, width: 2),
+                  ),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(
+                      Icons.visibility_off,
+                      color: Colors.grey,
+                      size: 24,
+                    ),
+                    onPressed: () async {
+                      final newLesson = Lesson(
+                        id: lesson.id,
+                        studentId: lesson.studentId,
+                        startTime: lesson.startTime,
+                        endTime: lesson.endTime,
+                        isPaid: lesson.isPaid,
+                        notes: lesson.notes,
+                        price: lesson.price,
+                        isHomeworkSent: lesson.isHomeworkSent,
+                        isHidden: true,
+                      );
+                      await _database.updateLesson(newLesson);
+                      await _loadAllData();
+                    },
+                  ),
+                )
+              else
+                Container(
+                  width: 45,
+                  height: 45,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.red, width: 2),
+                  ),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(Icons.close, color: Colors.red, size: 24),
+                    onPressed: () => _showCancelOptionsDialog(lesson, student),
+                  ),
+                ),
+            ] else if (source == 'calendar') ...[
+              if (!lesson.isHomeworkSent)
+                Container(
+                  width: 45,
+                  height: 45,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.red, width: 2),
+                  ),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(Icons.close, color: Colors.red, size: 24),
+                    onPressed: () => _showCancelOptionsDialog(lesson, student),
+                  ),
+                ),
+            ],
+          ],
         ),
       ),
+    );
+  }
+
+  void _showHomeworkConfirmationDialog(Lesson lesson) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Домашнее задание',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            'Отметить домашнее задание как ${lesson.isHomeworkSent ? 'неотправленное' : 'отправленное'}?',
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Отмена'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: const Text('Подтвердить'),
+              onPressed: () async {
+                final newLesson = Lesson(
+                  id: lesson.id,
+                  studentId: lesson.studentId,
+                  startTime: lesson.startTime,
+                  endTime: lesson.endTime,
+                  isPaid: lesson.isPaid,
+                  notes: lesson.notes,
+                  price: lesson.price,
+                  isHomeworkSent: !lesson.isHomeworkSent,
+                );
+                await _database.updateLesson(newLesson);
+                if (!newLesson.isHomeworkSent) {
+                  final unhiddenLesson = Lesson(
+                    id: newLesson.id,
+                    studentId: newLesson.studentId,
+                    startTime: newLesson.startTime,
+                    endTime: newLesson.endTime,
+                    isPaid: newLesson.isPaid,
+                    notes: newLesson.notes,
+                    price: newLesson.price,
+                    isHomeworkSent: newLesson.isHomeworkSent,
+                    isHidden: false,
+                  );
+                  await _database.updateLesson(unhiddenLesson);
+                }
+                await _loadAllData();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -370,7 +524,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Отменить занятие'),
+          title: const Text('Отмена занятия'),
           content: const Text('Как вы хотите отменить занятие?'),
           actions: <Widget>[
             TextButton(
@@ -494,7 +648,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 final endTime = DateFormat('HH:mm').format(lesson.endTime);
                 final timeRange = '$startTime-$endTime';
 
-                // Format student name
                 String studentDisplayName = student.name;
                 if (student.surname != null && student.surname!.isNotEmpty) {
                   studentDisplayName += ' ${student.surname![0]}.';
@@ -658,6 +811,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     return Column(
       children: [
         TableCalendar(
+          startingDayOfWeek: StartingDayOfWeek.monday,
           focusedDay: _focusedDay,
           firstDay: DateTime.utc(2020, 1, 1),
           lastDay: DateTime.utc(2030, 12, 31),
@@ -685,6 +839,18 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           },
 
           calendarBuilders: CalendarBuilders(
+            dowBuilder: (context, day) {
+              final text = DateFormat.E('ru_RU').format(day);
+              return Center(
+                child: Text(
+                  text,
+                  style: const TextStyle(
+                    fontSize: 13.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              );
+            },
             markerBuilder: (context, day, events) {
               if (events.isEmpty) return const SizedBox();
 
@@ -722,7 +888,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   itemBuilder: (context, index) {
                     final lesson = _lessons[index]['lesson'] as Lesson;
                     final student = _lessons[index]['student'] as Student;
-                    return _buildLessonCard(lesson, student);
+                    return _buildLessonCard(
+                      lesson,
+                      student,
+                      source: 'calendar',
+                    );
                   },
                 ),
         ),

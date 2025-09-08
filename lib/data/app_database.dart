@@ -28,7 +28,7 @@ class AppDatabase {
 
     return await openDatabase(
       path,
-      version: 7,
+      version: 8,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -59,6 +59,8 @@ class AppDatabase {
         is_paid INTEGER,
         notes TEXT,
         price REAL,
+        is_homework_sent INTEGER NOT NULL DEFAULT 0,
+        is_hidden INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
       )
     ''');
@@ -123,28 +125,15 @@ class AppDatabase {
     if (oldVersion < 6) {
       await db.execute('ALTER TABLE lessons ADD COLUMN price REAL');
     }
-
     if (oldVersion < 7) {
-      await db.execute('ALTER TABLE lessons RENAME TO lessons_old');
-      await db.execute('''
-      CREATE TABLE lessons(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id INTEGER,
-        start_time INTEGER,
-        end_time INTEGER,
-        is_paid INTEGER,
-        notes TEXT,
-        price REAL,
-        FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE SET NULL
-      )
-    ''');
-      final List<Map<String, dynamic>> oldLessons = await db.query(
-        'lessons_old',
+      await db.execute(
+        'ALTER TABLE lessons ADD COLUMN is_homework_sent INTEGER NOT NULL DEFAULT 0',
       );
-      for (final oldLesson in oldLessons) {
-        await db.insert('lessons', oldLesson);
-      }
-      await db.execute('DROP TABLE lessons_old');
+    }
+    if (oldVersion < 8) {
+      await db.execute(
+        'ALTER TABLE lessons ADD COLUMN is_hidden INTEGER NOT NULL DEFAULT 0',
+      );
     }
   }
 
@@ -355,9 +344,11 @@ class AppDatabase {
     );
   }
 
-  Future<List<Map<String, dynamic>>> getFinancialData() async {
+  Future<List<Map<String, dynamic>>> getFinancialData({
+    List<int>? studentIds,
+  }) async {
     final db = await database;
-    return await db.rawQuery('''
+    String query = '''
     SELECT
       lessons.id,
       lessons.start_time,
@@ -369,8 +360,18 @@ class AppDatabase {
       students.autoPay
     FROM lessons
     INNER JOIN students ON lessons.student_id = students.id
-    ORDER BY lessons.start_time DESC;
-  ''');
+    ''';
+
+    List<dynamic> args = [];
+    if (studentIds != null && studentIds.isNotEmpty) {
+      query +=
+          ' WHERE students.id IN (${List.filled(studentIds.length, '?').join(',')})';
+      args.addAll(studentIds);
+    }
+
+    query += ' ORDER BY lessons.start_time ASC;';
+
+    return await db.rawQuery(query, args);
   }
 
   Future<List<Map<String, dynamic>>> getFinancialDataByDateRange(

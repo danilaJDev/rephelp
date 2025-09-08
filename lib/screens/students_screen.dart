@@ -169,12 +169,11 @@ class _StudentsScreenState extends State<StudentsScreen>
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(10.0),
+                  padding: const EdgeInsets.fromLTRB(15, 20, 15, 15),
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
                       hintText: 'Поиск ученика',
-                      hintStyle: const TextStyle(color: Colors.grey),
                       prefixIcon: const Icon(Icons.search),
                       filled: true,
                       fillColor: Colors.white,
@@ -211,18 +210,17 @@ class _StudentsScreenState extends State<StudentsScreen>
       );
     }
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 10.0),
       itemCount: students.length,
       itemBuilder: (context, index) {
         final student = students[index];
         return Card(
           color: Colors.white,
-          margin: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+          margin: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 4.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15.0),
           ),
           child: ListTile(
-            leading: CircleAvatar(
+            leading: const CircleAvatar(
               backgroundColor: Colors.deepPurple,
               child: Icon(Icons.person, color: Colors.white),
             ),
@@ -234,23 +232,43 @@ class _StudentsScreenState extends State<StudentsScreen>
               ),
             ),
             onTap: () => _editStudent(student),
-            trailing: IconButton(
-              icon: const Icon(Icons.more_vert, color: Colors.deepPurple),
-              onPressed: () {
-                if (isArchived) {
-                  _showArchiveMenu(context, student);
-                } else {
-                  _showActiveMenu(context, student);
-                }
-              },
-            ),
+            trailing: isArchived
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.unarchive, color: Colors.green),
+                        onPressed: () {
+                          _showUnarchiveConfirmationDialog(context, student);
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          _showDeleteConfirmationDialog(context, student);
+                        },
+                      ),
+                    ],
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.archive, color: Colors.orange),
+                        onPressed: () {
+                          _showArchiveConfirmationDialog(context, student);
+                        },
+                      ),
+                    ],
+                  ),
           ),
         );
       },
     );
   }
 
-  void _showActiveMenu(BuildContext context, Student student) {
+  void _showArchiveConfirmationDialog(BuildContext context, Student student) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -258,49 +276,91 @@ class _StudentsScreenState extends State<StudentsScreen>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: Center(
-            child: Column(
+          title: const Text(
+            'Архивация ученика',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          content: RichText(
+            text: TextSpan(
+              style: DefaultTextStyle.of(context).style.copyWith(fontSize: 16),
               children: [
-                const Icon(Icons.person, size: 30),
-                const SizedBox(height: 10),
-                Text('${student.name} ${student.surname ?? ''}'),
+                const TextSpan(text: 'Перенести '),
+                TextSpan(
+                  text: student.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const TextSpan(text: ' '),
+                TextSpan(
+                  text: student.surname != null && student.surname!.isNotEmpty
+                      ? '${student.surname![0]}.'
+                      : '',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const TextSpan(text: ' в архив?'),
               ],
             ),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: const Text('Редактировать'),
-                iconColor: Colors.blue,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _editStudent(student);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.archive),
-                iconColor: Colors.orange,
-                title: const Text('Архивировать'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _toggleArchiveStatus(student.id!, true);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.cancel),
-                title: const Text('Закрыть'),
-                onTap: () => Navigator.of(context).pop(),
-              ),
-            ],
+          actionsPadding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 8,
           ),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      side: const BorderSide(color: Colors.grey),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(
+                      'Отмена',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                    ),
+                    onPressed: () {
+                      _toggleArchiveStatus(student.id!, true);
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text(
+                      'Подтвердить',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         );
       },
     );
   }
 
-  void _showArchiveMenu(BuildContext context, Student student) {
+  void _showUnarchiveConfirmationDialog(BuildContext context, Student student) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -308,43 +368,167 @@ class _StudentsScreenState extends State<StudentsScreen>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: Center(
-            child: Column(
+          title: const Text(
+            'Восстановление ученика',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          content: RichText(
+            text: TextSpan(
+              style: DefaultTextStyle.of(context).style.copyWith(fontSize: 16),
               children: [
-                const Icon(Icons.person, size: 30),
-                const SizedBox(height: 10),
-                Text('${student.name} ${student.surname ?? ''}'),
+                const TextSpan(text: 'Перенести '),
+                TextSpan(
+                  text: '${student.name} ${student.surname ?? ''}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const TextSpan(text: ' в активные?'),
               ],
             ),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.unarchive),
-                title: const Text('Перенести в активные'),
-                iconColor: Colors.green,
-                onTap: () {
-                  _toggleArchiveStatus(student.id!, false);
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete),
-                iconColor: Colors.red,
-                title: const Text('Удалить'),
-                onTap: () {
-                  _deleteStudent(student.id!);
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.cancel),
-                title: const Text('Отмена'),
-                onTap: () => Navigator.of(context).pop(),
-              ),
-            ],
+          actionsPadding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 8,
           ),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      side: const BorderSide(color: Colors.grey),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(
+                      'Отмена',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                    ),
+                    onPressed: () {
+                      _toggleArchiveStatus(student.id!, false);
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text(
+                      'Подтвердить',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmationDialog(BuildContext context, Student student) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Удаление ученика',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          content: RichText(
+            text: TextSpan(
+              style: DefaultTextStyle.of(context).style.copyWith(fontSize: 16),
+              children: [
+                const TextSpan(text: 'Удалить '),
+                TextSpan(
+                  text: '${student.name} ${student.surname ?? ''}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const TextSpan(text: '?'),
+                const TextSpan(
+                  text:
+                      '\n\nЭто действие удалит все данные о доходах, связанные с этим учеником.',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          actionsPadding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 8,
+          ),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      side: const BorderSide(color: Colors.grey),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(
+                      'Отмена',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _deleteStudent(student.id!);
+                    },
+                    child: const Text(
+                      'Удалить',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         );
       },
     );

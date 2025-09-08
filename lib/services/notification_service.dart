@@ -18,12 +18,14 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
-  final MethodChannel _channel =
-      const MethodChannel('com.example.rephelp/notifications');
+  final MethodChannel _channel = const MethodChannel(
+    'com.example.rephelp/notifications',
+  );
 
   Future<void> checkAndRequestExactAlarmPermission() async {
-    final bool hasPermission =
-        await _channel.invokeMethod('checkExactAlarmPermission');
+    final bool hasPermission = await _channel.invokeMethod(
+      'checkExactAlarmPermission',
+    );
     if (!hasPermission) {
       await _channel.invokeMethod('requestExactAlarmPermission');
     }
@@ -37,16 +39,16 @@ class NotificationService {
 
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
 
     const InitializationSettings initializationSettings =
         InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsIOS,
+        );
 
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   }
@@ -58,18 +60,16 @@ class NotificationService {
   }
 
   Future<void> requestPermissions() async {
-    final bool? result = await flutterLocalNotificationsPlugin
+    await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.requestNotificationsPermission();
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+          IOSFlutterLocalNotificationsPlugin
+        >()
+        ?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
   Future<void> scheduleLessonNotification(

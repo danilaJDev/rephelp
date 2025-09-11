@@ -86,7 +86,8 @@ class NotificationService {
       platformChannelSpecifics,
       androidAllowWhileIdle: true,
       uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time,
     );
   }
 

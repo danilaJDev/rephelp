@@ -614,6 +614,7 @@ class _ClassesViewState extends State<ClassesView> {
                 lesson['end_time'],
               );
               final isPaid = lesson['is_paid'] == 1;
+              final isHomeworkSent = lesson['is_homework_sent'] == 1;
               final isFuture = DateTime.now().isBefore(endTime);
 
               final lessonDate = DateFormat.yMMMd('ru').format(startTime);
@@ -733,7 +734,7 @@ class _ClassesViewState extends State<ClassesView> {
                             color: priceColor,
                           ),
                         ),
-                        if (!isFuture && isPaid)
+                        if (!isFuture && isPaid && isHomeworkSent)
                           Row(
                             children: [
                               const SizedBox(width: 10),

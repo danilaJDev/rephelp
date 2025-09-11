@@ -270,9 +270,13 @@ class AppDatabase {
 
   Future<void> updateLesson(Lesson lesson) async {
     final db = await database;
+    final lessonMap = lesson.toMap();
+
+    lessonMap.remove('is_hidden_in_finance');
+
     await db.update(
       'lessons',
-      lesson.toMap(),
+      lessonMap,
       where: 'id = ?',
       whereArgs: [lesson.id],
     );
@@ -326,7 +330,7 @@ class AppDatabase {
   ) async {
     final db = await database;
     final startTimeMillis = startTime.millisecondsSinceEpoch;
-    // Dart: Mon=1..Sun=7, SQLite's strftime('%w',...): Sun=0..Sat=6
+
     final sqliteWeekday = (startTime.weekday % 7).toString();
 
     await db.rawDelete(
@@ -350,7 +354,10 @@ class AppDatabase {
     );
   }
 
-  Future<void> updateLessonIsHiddenInSchedule(int lessonId, bool isHidden) async {
+  Future<void> updateLessonIsHiddenInSchedule(
+    int lessonId,
+    bool isHidden,
+  ) async {
     final db = await database;
     await db.update(
       'lessons',
@@ -360,7 +367,10 @@ class AppDatabase {
     );
   }
 
-  Future<void> updateLessonIsHiddenInFinance(int lessonId, bool isHidden) async {
+  Future<void> updateLessonIsHiddenInFinance(
+    int lessonId,
+    bool isHidden,
+  ) async {
     final db = await database;
     await db.update(
       'lessons',
@@ -381,6 +391,7 @@ class AppDatabase {
       lessons.end_time,
       lessons.is_paid,
       lessons.is_hidden_in_finance,
+      lessons.is_homework_sent,
       students.name,
       students.surname,
       lessons.price,

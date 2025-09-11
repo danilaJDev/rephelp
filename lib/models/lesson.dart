@@ -8,6 +8,7 @@ class Lesson {
   final double? price;
   final bool isHomeworkSent;
   final bool isHidden;
+  final int? reminderTime;
 
   Lesson({
     this.id,
@@ -19,6 +20,7 @@ class Lesson {
     this.price,
     this.isHomeworkSent = false,
     this.isHidden = false,
+    this.reminderTime,
   });
 
   Map<String, dynamic> toMap() {
@@ -32,6 +34,7 @@ class Lesson {
       'price': price,
       'is_homework_sent': isHomeworkSent ? 1 : 0,
       'is_hidden': isHidden ? 1 : 0,
+      'reminder_time': reminderTime,
     };
   }
 
@@ -46,6 +49,7 @@ class Lesson {
       price: map['price'] as double?,
       isHomeworkSent: (map['is_homework_sent'] as int? ?? 0) == 1,
       isHidden: (map['is_hidden'] as int? ?? 0) == 1,
+      reminderTime: map['reminder_time'] as int?,
     );
   }
 }

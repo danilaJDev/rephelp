@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:rephelp/models/lesson.dart';
 import 'package:rephelp/models/student.dart';
+import 'package:rephelp/notification_service.dart';
 import 'package:rephelp/widgets/custom_app_bar.dart';
 
 class AddLessonScreen extends StatefulWidget {
@@ -29,6 +30,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   TimeOfDay? _endTime;
   late TextEditingController _notesController;
   bool _isFormValid = false;
+  int? _reminderTime;
 
   bool _duplicateLessons = false;
   DateTime? _duplicationStartDate;
@@ -47,6 +49,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
       _startTime = TimeOfDay.fromDateTime(lesson.startTime);
       _endTime = TimeOfDay.fromDateTime(lesson.endTime);
       _notesController.text = lesson.notes ?? '';
+      _reminderTime = lesson.reminderTime;
       try {
         _selectedStudent = widget.students.firstWhere(
           (s) => s.id == lesson.studentId,
@@ -196,8 +199,19 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
           isPaid: widget.lessonToEdit!.isPaid,
           notes: _notesController.text,
           price: student.price,
+          reminderTime: _reminderTime,
         );
         await database.updateLesson(lessonToUpdate);
+        if (_reminderTime != null) {
+          await NotificationService.scheduleLessonNotification(
+            lessonId: lessonToUpdate.id!,
+            studentName: '${student.name} ${student.surname ?? ''}',
+            lessonTime: lessonToUpdate.startTime,
+            reminderMinutes: _reminderTime!,
+          );
+        } else {
+          await NotificationService.cancelNotification(lessonToUpdate.id!);
+        }
       } else {
         final newLesson = Lesson(
           studentId: student.id!,
@@ -205,8 +219,17 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
           endTime: lessonEndTime,
           notes: _notesController.text,
           price: student.price,
+          reminderTime: _reminderTime,
         );
-        await database.insertLesson(newLesson);
+        final lessonId = await database.insertLesson(newLesson);
+        if (_reminderTime != null) {
+          await NotificationService.scheduleLessonNotification(
+            lessonId: lessonId,
+            studentName: '${student.name} ${student.surname ?? ''}',
+            lessonTime: newLesson.startTime,
+            reminderMinutes: _reminderTime!,
+          );
+        }
       }
     }
 
@@ -296,6 +319,56 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                     onTap: () => _selectTime(false),
                   ),
                 ],
+              ),
+            ),
+
+            _buildSectionTitle('Напоминание'),
+            Card(
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
+                child: DropdownButtonFormField<int>(
+                  value: _reminderTime,
+                  onChanged: (int? newValue) {
+                    setState(() {
+                      _reminderTime = newValue;
+                    });
+                  },
+                  items: [
+                    const DropdownMenuItem<int>(
+                      value: null,
+                      child: Text('Нет'),
+                    ),
+                    const DropdownMenuItem<int>(
+                      value: 5,
+                      child: Text('За 5 минут'),
+                    ),
+                    const DropdownMenuItem<int>(
+                      value: 10,
+                      child: Text('За 10 минут'),
+                    ),
+                    const DropdownMenuItem<int>(
+                      value: 15,
+                      child: Text('За 15 минут'),
+                    ),
+                    const DropdownMenuItem<int>(
+                      value: 30,
+                      child: Text('За 30 минут'),
+                    ),
+                  ],
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'Выберите время напоминания',
+                  ),
+                  isExpanded: true,
+                ),
               ),
             ),
 

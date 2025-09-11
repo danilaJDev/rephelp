@@ -5,6 +5,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:rephelp/models/lesson.dart';
 import 'package:rephelp/models/student.dart';
+import 'package:rephelp/notification_service.dart';
 import 'package:rephelp/screens/add_lesson_screen.dart';
 
 class ScheduleScreen extends StatefulWidget {
@@ -531,6 +532,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               onPressed: () async {
                 Navigator.of(context).pop();
                 await _database.deleteLesson(lesson.id!);
+                await NotificationService.cancelNotification(lesson.id!);
                 await _loadAllData();
               },
             ),
@@ -538,6 +540,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               child: const Text('Это и все последующие'),
               onPressed: () async {
                 Navigator.of(context).pop();
+                final lessonsToDelete =
+                    await _database.getFutureRecurringLessons(
+                  student.id!,
+                  lesson.startTime,
+                );
+                for (final l in lessonsToDelete) {
+                  await NotificationService.cancelNotification(l.id!);
+                }
                 await _database.deleteFutureRecurringLessons(
                   student.id!,
                   lesson.startTime,

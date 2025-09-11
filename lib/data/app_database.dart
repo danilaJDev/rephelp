@@ -28,7 +28,7 @@ class AppDatabase {
 
     return await openDatabase(
       path,
-      version: 8,
+      version: 9,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -61,6 +61,7 @@ class AppDatabase {
         price REAL,
         is_homework_sent INTEGER NOT NULL DEFAULT 0,
         is_hidden INTEGER NOT NULL DEFAULT 0,
+        reminder_time INTEGER,
         FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
       )
     ''');
@@ -133,6 +134,11 @@ class AppDatabase {
     if (oldVersion < 8) {
       await db.execute(
         'ALTER TABLE lessons ADD COLUMN is_hidden INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+    if (oldVersion < 9) {
+      await db.execute(
+        'ALTER TABLE lessons ADD COLUMN reminder_time INTEGER',
       );
     }
   }

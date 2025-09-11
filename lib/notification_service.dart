@@ -71,6 +71,7 @@ class NotificationService {
       importance: Importance.max,
       priority: Priority.high,
       showWhen: true,
+      playSound: true,
       color: Colors.deepPurple,
     );
 

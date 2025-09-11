@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:rephelp/services/notification_service.dart';
 
 import 'package:rephelp/screens/students_screen.dart';
 import 'package:rephelp/screens/schedule_screen.dart';
@@ -11,11 +10,8 @@ import 'package:rephelp/screens/analytics_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('ru_RU');
+  await initializeDateFormatting('ru_RU', null);
   await AppDatabase().database;
-  final notificationService = NotificationService();
-  await notificationService.init();
-  await notificationService.requestPermissions();
   runApp(const RepHelpApp());
 }
 

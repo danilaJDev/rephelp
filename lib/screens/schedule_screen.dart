@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:rephelp/services/notification_service.dart';
 import 'package:rephelp/widgets/custom_app_bar.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:rephelp/data/app_database.dart';
@@ -21,7 +20,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   final AppDatabase _database = AppDatabase();
-  final NotificationService _notificationService = NotificationService();
   List<Map<String, dynamic>> _lessons = [];
   List<Student> _students = [];
   Map<DateTime, List<Map<String, dynamic>>> _allLessons = {};
@@ -391,7 +389,23 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                     onPressed: () => _showCancelOptionsDialog(lesson, student),
                   ),
                 ),
-            ]
+            ] else if (source == 'calendar') ...[
+              if (!lesson.isHomeworkSent)
+                Container(
+                  width: 45,
+                  height: 45,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.red, width: 2),
+                  ),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(Icons.close, color: Colors.red, size: 24),
+                    onPressed: () => _showCancelOptionsDialog(lesson, student),
+                  ),
+                ),
+            ],
           ],
         ),
       ),
@@ -429,6 +443,20 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   isHomeworkSent: !lesson.isHomeworkSent,
                 );
                 await _database.updateLesson(newLesson);
+                if (!newLesson.isHomeworkSent) {
+                  final unhiddenLesson = Lesson(
+                    id: newLesson.id,
+                    studentId: newLesson.studentId,
+                    startTime: newLesson.startTime,
+                    endTime: newLesson.endTime,
+                    isPaid: newLesson.isPaid,
+                    notes: newLesson.notes,
+                    price: newLesson.price,
+                    isHomeworkSent: newLesson.isHomeworkSent,
+                    isHidden: false,
+                  );
+                  await _database.updateLesson(unhiddenLesson);
+                }
                 await _loadAllData();
                 Navigator.of(context).pop();
               },
@@ -502,7 +530,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               child: const Text('Только это'),
               onPressed: () async {
                 Navigator.of(context).pop();
-                await _notificationService.cancelNotification(lesson.id!);
                 await _database.deleteLesson(lesson.id!);
                 await _loadAllData();
               },
@@ -511,14 +538,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               child: const Text('Это и все последующие'),
               onPressed: () async {
                 Navigator.of(context).pop();
-                final lessonsToDelete =
-                    await _database.deleteFutureRecurringLessons(
+                await _database.deleteFutureRecurringLessons(
                   student.id!,
                   lesson.startTime,
                 );
-                for (var l in lessonsToDelete) {
-                  await _notificationService.cancelNotification(l.id!);
-                }
                 await _loadAllData();
               },
             ),
@@ -606,7 +629,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         ...daysOfWeek.map((day) {
           final lessonsInSlot = _getLessonsForSlot(day, time, weekLessons);
           if (lessonsInSlot.isEmpty) {
-            return Container(height: 60);
+            return DragTarget<Lesson>(
+              builder: (context, candidateData, rejectedData) {
+                return Container(height: 60);
+              },
+              onWillAccept: (data) => true,
+              onAccept: (data) {},
+            );
           }
           return Container(
             padding: const EdgeInsets.all(2.0),
@@ -656,9 +685,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   ),
                 );
 
-                return GestureDetector(
-                  onTap: () => _showLessonMenu(context, lesson, student),
-                  child: lessonWidget,
+                return Draggable<Lesson>(
+                  data: lesson,
+                  feedback: Opacity(opacity: 0.7, child: lessonWidget),
+                  childWhenDragging: Opacity(opacity: 0.3, child: lessonWidget),
+                  child: GestureDetector(
+                    onTap: () => _showLessonMenu(context, lesson, student),
+                    child: lessonWidget,
+                  ),
                 );
               }).toList(),
             ),

@@ -1,56 +1,76 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'dart:io';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin
-      _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   static Future<void> init() async {
+    tz.initializeTimeZones();
+
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    final DarwinInitializationSettings initializationSettingsIOS =
+    const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-      onDidReceiveLocalNotification: (
-        int id,
-        String? title,
-        String? body,
-        String? payload,
-      ) async {
-        // Handle notification tapped logic here
-      },
-    );
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
 
-    final InitializationSettings initializationSettings =
+    const InitializationSettings initializationSettings =
         InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsIOS,
+        );
 
-    await _flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) async {
-        // Handle notification tapped logic here
-      },
-    );
+    await _flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
-    // Request permissions on Android 13+
-    final androidImplementation =
-        _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-    if (androidImplementation != null) {
-      await androidImplementation.requestNotificationsPermission();
-      await androidImplementation.requestExactAlarmsPermission();
+    if (Platform.isAndroid) {
+      await _requestAndroidPermissions();
     }
+  }
 
+  static Future<void> _requestAndroidPermissions() async {
+    final androidImplementation = _flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (androidImplementation != null) {
+      final bool? notificationPermissionGranted = await androidImplementation
+          .requestNotificationsPermission();
+      debugPrint(
+        'Permission for notifications ${notificationPermissionGranted == true ? "granted" : "denied"}',
+      );
 
-    tz.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('Europe/Moscow'));
+      final bool? exactAlarmsPermissionGranted = await androidImplementation
+          .requestExactAlarmsPermission();
+      debugPrint(
+        'Permission for exact alarms ${exactAlarmsPermissionGranted == true ? "granted" : "denied"}',
+      );
+    }
+  }
+
+  static NotificationDetails _notificationDetails() {
+    const AndroidNotificationDetails androidNotificationDetails =
+        AndroidNotificationDetails(
+          'lesson_channel_id',
+          'Lesson Reminders',
+          channelDescription:
+              'Channel for notifications about upcoming lessons',
+          importance: Importance.max,
+          priority: Priority.high,
+          playSound: true,
+        );
+    const DarwinNotificationDetails darwinNotificationDetails =
+        DarwinNotificationDetails();
+    return const NotificationDetails(
+      android: androidNotificationDetails,
+      iOS: darwinNotificationDetails,
+    );
   }
 
   static Future<void> scheduleLessonNotification({
@@ -59,39 +79,34 @@ class NotificationService {
     required DateTime lessonTime,
     required int reminderMinutes,
   }) async {
-    final tz.TZDateTime scheduledDate =
-        tz.TZDateTime.from(lessonTime, tz.local)
-            .subtract(Duration(minutes: reminderMinutes));
-
-    final AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'lesson_reminders',
-      'Напоминания о занятиях',
-      channelDescription: 'Уведомления о предстоящих занятиях',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: true,
-      playSound: true,
-      color: Colors.deepPurple,
+    final scheduledNotificationDateTime = lessonTime.subtract(
+      Duration(minutes: reminderMinutes),
     );
 
-    final NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
+    if (scheduledNotificationDateTime.isBefore(DateTime.now())) {
+      debugPrint(
+        'Notification for lesson #$lessonId was not scheduled (time is in the past).',
+      );
+      return;
+    }
 
     await _flutterLocalNotificationsPlugin.zonedSchedule(
       lessonId,
-      'Скоро занятие с $studentName',
-      'Через $reminderMinutes минут',
-      scheduledDate,
-      platformChannelSpecifics,
-      androidAllowWhileIdle: true,
+      'Upcoming lesson with $studentName',
+      'In $reminderMinutes minutes',
+      tz.TZDateTime.from(scheduledNotificationDateTime, tz.local),
+      _notificationDetails(),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
+    );
+    debugPrint(
+      'Notification for lesson #$lessonId scheduled for $scheduledNotificationDateTime',
     );
   }
 
-  static Future<void> cancelNotification(int notificationId) async {
-    await _flutterLocalNotificationsPlugin.cancel(notificationId);
+  static Future<void> cancelNotification(int lessonId) async {
+    await _flutterLocalNotificationsPlugin.cancel(lessonId);
+    debugPrint('Notification for lesson #$lessonId canceled.');
   }
 }

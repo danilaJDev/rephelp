@@ -5,7 +5,6 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:rephelp/data/app_database.dart';
 import 'package:rephelp/models/lesson.dart';
 import 'package:rephelp/models/student.dart';
-import 'package:rephelp/notification_service.dart';
 import 'package:rephelp/screens/add_lesson_screen.dart';
 
 class ScheduleScreen extends StatefulWidget {
@@ -48,7 +47,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       _students = allStudents;
       _allLessons = _groupAndPairLessons(allLessons, allStudents);
     });
-    await _loadLessonsForDay(_selectedDay!);
+    if (_selectedDay != null) {
+      await _loadLessonsForDay(_selectedDay!);
+    }
   }
 
   Future<void> _loadLessonsForDay(DateTime day) async {
@@ -98,24 +99,23 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     List<Student> students,
   ) {
     final Map<DateTime, List<Map<String, dynamic>>> data = {};
+    final studentMap = {for (var s in students) s.id: s};
+
     for (var lesson in lessons) {
-      final studentIndex = students.indexWhere((s) => s.id == lesson.studentId);
-      if (studentIndex == -1) {
-        continue;
-      }
-      final student = students[studentIndex];
+      if (studentMap.containsKey(lesson.studentId)) {
+        final student = studentMap[lesson.studentId]!;
+        final day = DateTime(
+          lesson.startTime.year,
+          lesson.startTime.month,
+          lesson.startTime.day,
+        );
+        final lessonWithStudent = {'lesson': lesson, 'student': student};
 
-      final day = DateTime(
-        lesson.startTime.year,
-        lesson.startTime.month,
-        lesson.startTime.day,
-      );
-      final lessonWithStudent = {'lesson': lesson, 'student': student};
-
-      if (data.containsKey(day)) {
-        data[day]!.add(lessonWithStudent);
-      } else {
-        data[day] = [lessonWithStudent];
+        if (data.containsKey(day)) {
+          data[day]!.add(lessonWithStudent);
+        } else {
+          data[day] = [lessonWithStudent];
+        }
       }
     }
     return data;
@@ -531,28 +531,25 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               child: const Text('Только это'),
               onPressed: () async {
                 Navigator.of(context).pop();
-                await _database.deleteLesson(lesson.id!);
-                await NotificationService.cancelNotification(lesson.id!);
-                await _loadAllData();
+                if (lesson.id != null) {
+                  // База данных сама отменит уведомление
+                  await _database.deleteLesson(lesson.id!);
+                  await _loadAllData();
+                }
               },
             ),
             TextButton(
               child: const Text('Это и все последующие'),
               onPressed: () async {
                 Navigator.of(context).pop();
-                final lessonsToDelete =
-                    await _database.getFutureRecurringLessons(
-                  student.id!,
-                  lesson.startTime,
-                );
-                for (final l in lessonsToDelete) {
-                  await NotificationService.cancelNotification(l.id!);
+                if (student.id != null) {
+                  // База данных сама отменит все нужные уведомления
+                  await _database.deleteFutureRecurringLessons(
+                    student.id!,
+                    lesson.startTime,
+                  );
+                  await _loadAllData();
                 }
-                await _database.deleteFutureRecurringLessons(
-                  student.id!,
-                  lesson.startTime,
-                );
-                await _loadAllData();
               },
             ),
             TextButton(
@@ -560,9 +557,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 'Закрыть',
                 style: TextStyle(color: Colors.grey),
               ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ],
         );

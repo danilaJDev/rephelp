@@ -79,162 +79,221 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
   }
 
   Future<void> _saveLesson() async {
-    if (!_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!.validate() || !_isFormValid) {
       return;
     }
 
-    final student = _selectedStudent;
-    if (student == null ||
-        student.id == null ||
-        _startTime == null ||
-        _endTime == null) {
-      return;
-    }
-
+    final student = _selectedStudent!;
+    final startTime = _startTime!;
+    final endTime = _endTime!;
     final database = AppDatabase();
 
+    // Сценарий 1: Редактирование этого и всех будущих занятий
     if (_applyToFutureLessons && widget.lessonToEdit != null) {
-      final originalLesson = widget.lessonToEdit!;
-      final lessonsToUpdate = await database.getFutureRecurringLessons(
-        originalLesson.studentId,
-        originalLesson.startTime,
-      );
-      final dayDifference =
-          _lessonDate.weekday - originalLesson.startTime.weekday;
-
-      final updatedLessons = lessonsToUpdate.map((lesson) {
-        final newDate = lesson.startTime.add(Duration(days: dayDifference));
-        final newStartTime = DateTime(
-          newDate.year,
-          newDate.month,
-          newDate.day,
-          _startTime!.hour,
-          _startTime!.minute,
-        );
-        final newEndTime = DateTime(
-          newDate.year,
-          newDate.month,
-          newDate.day,
-          _endTime!.hour,
-          _endTime!.minute,
-        );
-
-        return Lesson(
-          id: lesson.id,
-          studentId: lesson.studentId,
-          startTime: newStartTime,
-          endTime: newEndTime,
-          isPaid: lesson.isPaid,
-          notes: _notesController.text,
-          price: student.price,
-        );
-      }).toList();
-
-      if (updatedLessons.isNotEmpty) {
-        await database.updateLessons(updatedLessons);
-      }
-    } else if (_duplicateLessons &&
+      await _updateFutureLessons(database, student, startTime, endTime);
+    }
+    // Сценарий 2: Создание повторяющихся занятий (дублирование)
+    else if (_duplicateLessons &&
         _duplicationStartDate != null &&
         _duplicationEndDate != null) {
-      final lessonsToSave = <Lesson>[];
-      var currentDate = _duplicationStartDate!;
-      while (currentDate.isBefore(_duplicationEndDate!) ||
-          currentDate.isAtSameMomentAs(_duplicationEndDate!)) {
-        if (currentDate.weekday == _lessonDate.weekday) {
-          lessonsToSave.add(
-            Lesson(
-              studentId: student.id!,
-              startTime: DateTime(
-                currentDate.year,
-                currentDate.month,
-                currentDate.day,
-                _startTime!.hour,
-                _startTime!.minute,
-              ),
-              endTime: DateTime(
-                currentDate.year,
-                currentDate.month,
-                currentDate.day,
-                _endTime!.hour,
-                _endTime!.minute,
-              ),
-              notes: _notesController.text,
-              price: student.price,
-            ),
-          );
-        }
-        currentDate = currentDate.add(const Duration(days: 1));
-      }
-
-      if (widget.lessonToEdit != null) {
-        await database.deleteLesson(widget.lessonToEdit!.id!);
-      }
-
-      if (lessonsToSave.isNotEmpty) {
-        await database.insertLessons(lessonsToSave);
-      }
-    } else {
-      final lessonStartTime = DateTime(
-        _lessonDate.year,
-        _lessonDate.month,
-        _lessonDate.day,
-        _startTime!.hour,
-        _startTime!.minute,
-      );
-
-      final lessonEndTime = DateTime(
-        _lessonDate.year,
-        _lessonDate.month,
-        _lessonDate.day,
-        _endTime!.hour,
-        _endTime!.minute,
-      );
-
-      if (widget.lessonToEdit != null) {
-        final lessonToUpdate = Lesson(
-          id: widget.lessonToEdit!.id,
-          studentId: student.id!,
-          startTime: lessonStartTime,
-          endTime: lessonEndTime,
-          isPaid: widget.lessonToEdit!.isPaid,
-          notes: _notesController.text,
-          price: student.price,
-          reminderTime: _reminderTime,
-        );
-        await database.updateLesson(lessonToUpdate);
-        if (_reminderTime != null) {
-          await NotificationService.scheduleLessonNotification(
-            lessonId: lessonToUpdate.id!,
-            studentName: '${student.name} ${student.surname ?? ''}',
-            lessonTime: lessonToUpdate.startTime,
-            reminderMinutes: _reminderTime!,
-          );
-        } else {
-          await NotificationService.cancelNotification(lessonToUpdate.id!);
-        }
-      } else {
-        final newLesson = Lesson(
-          studentId: student.id!,
-          startTime: lessonStartTime,
-          endTime: lessonEndTime,
-          notes: _notesController.text,
-          price: student.price,
-          reminderTime: _reminderTime,
-        );
-        final lessonId = await database.insertLesson(newLesson);
-        if (_reminderTime != null) {
-          await NotificationService.scheduleLessonNotification(
-            lessonId: lessonId,
-            studentName: '${student.name} ${student.surname ?? ''}',
-            lessonTime: newLesson.startTime,
-            reminderMinutes: _reminderTime!,
-          );
-        }
-      }
+      await _createRecurringLessons(database, student, startTime, endTime);
+    }
+    // Сценарий 3: Создание или обновление одного занятия
+    else {
+      await _saveSingleLesson(database, student, startTime, endTime);
     }
 
     if (mounted) {
       Navigator.pop(context, true);
+    }
+  }
+
+  /// Сохраняет или обновляет одно занятие и его уведомление.
+  Future<void> _saveSingleLesson(
+    AppDatabase database,
+    Student student,
+    TimeOfDay startTime,
+    TimeOfDay endTime,
+  ) async {
+    final lessonStartTime = DateTime(
+      _lessonDate.year,
+      _lessonDate.month,
+      _lessonDate.day,
+      startTime.hour,
+      startTime.minute,
+    );
+    final lessonEndTime = DateTime(
+      _lessonDate.year,
+      _lessonDate.month,
+      _lessonDate.day,
+      endTime.hour,
+      endTime.minute,
+    );
+
+    if (widget.lessonToEdit != null) {
+      final lessonToUpdate = Lesson(
+        id: widget.lessonToEdit!.id,
+        studentId: student.id!,
+        startTime: lessonStartTime,
+        endTime: lessonEndTime,
+        isPaid: widget.lessonToEdit!.isPaid,
+        notes: _notesController.text,
+        price: student.price,
+        reminderTime: _reminderTime,
+      );
+      await database.updateLesson(lessonToUpdate);
+      await _rescheduleNotification(lessonToUpdate, student);
+    } else {
+      final newLesson = Lesson(
+        studentId: student.id!,
+        startTime: lessonStartTime,
+        endTime: lessonEndTime,
+        notes: _notesController.text,
+        price: student.price,
+        reminderTime: _reminderTime,
+      );
+      final lessonId = await database.insertLesson(newLesson);
+      // Важно! Создаем новый объект Lesson с полученным ID для планирования уведомления
+      final lessonWithId = Lesson(
+        id: lessonId,
+        studentId: newLesson.studentId,
+        startTime: newLesson.startTime,
+        endTime: newLesson.endTime,
+        notes: newLesson.notes,
+        price: newLesson.price,
+        reminderTime: newLesson.reminderTime,
+      );
+      await _rescheduleNotification(lessonWithId, student);
+    }
+  }
+
+  /// Создает серию повторяющихся занятий и планирует уведомления для каждого.
+  Future<void> _createRecurringLessons(
+    AppDatabase database,
+    Student student,
+    TimeOfDay startTime,
+    TimeOfDay endTime,
+  ) async {
+    final lessonsToSave = <Lesson>[];
+    var currentDate = _duplicationStartDate!;
+    while (!currentDate.isAfter(_duplicationEndDate!)) {
+      if (currentDate.weekday == _lessonDate.weekday) {
+        lessonsToSave.add(
+          Lesson(
+            studentId: student.id!,
+            startTime: DateTime(
+              currentDate.year,
+              currentDate.month,
+              currentDate.day,
+              startTime.hour,
+              startTime.minute,
+            ),
+            endTime: DateTime(
+              currentDate.year,
+              currentDate.month,
+              currentDate.day,
+              endTime.hour,
+              endTime.minute,
+            ),
+            notes: _notesController.text,
+            price: student.price,
+            reminderTime: _reminderTime,
+          ),
+        );
+      }
+      currentDate = currentDate.add(const Duration(days: 1));
+    }
+
+    if (widget.lessonToEdit != null) {
+      // Отменяем старое уведомление перед удалением урока
+      await NotificationService.cancelNotification(widget.lessonToEdit!.id!);
+      await database.deleteLesson(widget.lessonToEdit!.id!);
+    }
+
+    if (lessonsToSave.isNotEmpty) {
+      // Вставляем все уроки в БД и планируем уведомления
+      for (final lesson in lessonsToSave) {
+        final lessonId = await database.insertLesson(lesson);
+        final lessonWithId = Lesson(
+          id: lessonId,
+          studentId: lesson.studentId,
+          startTime: lesson.startTime,
+          endTime: lesson.endTime,
+          notes: lesson.notes,
+          price: lesson.price,
+          reminderTime: lesson.reminderTime,
+        );
+        await _rescheduleNotification(lessonWithId, student);
+      }
+    }
+  }
+
+  /// Обновляет будущие занятия
+  Future<void> _updateFutureLessons(
+    AppDatabase database,
+    Student student,
+    TimeOfDay startTime,
+    TimeOfDay endTime,
+  ) async {
+    final originalLesson = widget.lessonToEdit!;
+    final lessonsToUpdate = await database.getFutureRecurringLessons(
+      originalLesson.studentId,
+      originalLesson.startTime,
+    );
+    final dayDifference =
+        _lessonDate.weekday - originalLesson.startTime.weekday;
+
+    final updatedLessons = lessonsToUpdate.map((lesson) {
+      final newDate = lesson.startTime.add(Duration(days: dayDifference));
+      final newStartTime = DateTime(
+        newDate.year,
+        newDate.month,
+        newDate.day,
+        startTime.hour,
+        startTime.minute,
+      );
+      final newEndTime = DateTime(
+        newDate.year,
+        newDate.month,
+        newDate.day,
+        endTime.hour,
+        endTime.minute,
+      );
+
+      return Lesson(
+        id: lesson.id,
+        studentId: lesson.studentId,
+        startTime: newStartTime,
+        endTime: newEndTime,
+        isPaid: lesson.isPaid,
+        notes: _notesController.text,
+        price: student.price,
+        reminderTime: _reminderTime,
+      );
+    }).toList();
+
+    if (updatedLessons.isNotEmpty) {
+      await database.updateLessons(updatedLessons);
+      // Перепланируем уведомления для всех обновленных уроков
+      for (final lesson in updatedLessons) {
+        await _rescheduleNotification(lesson, student);
+      }
+    }
+  }
+
+  /// Вспомогательный метод для планирования или отмены уведомления
+  Future<void> _rescheduleNotification(Lesson lesson, Student student) async {
+    if (lesson.id == null) return;
+
+    if (_reminderTime != null && _reminderTime! > 0) {
+      await NotificationService.scheduleLessonNotification(
+        lessonId: lesson.id!,
+        studentName: '${student.name} ${student.surname ?? ''}',
+        lessonTime: lesson.startTime,
+        reminderMinutes: _reminderTime!,
+      );
+    } else {
+      await NotificationService.cancelNotification(lesson.id!);
     }
   }
 
@@ -288,7 +347,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                     title: const Text('Дата'),
                     trailing: Text(
                       DateFormat('dd.MM.yy').format(_lessonDate),
-                      style: TextStyle(fontSize: 14),
+                      style: const TextStyle(fontSize: 14),
                     ),
                     onTap: _selectLessonDate,
                   ),
@@ -301,7 +360,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                     title: const Text('Начало'),
                     trailing: Text(
                       _startTime?.format(context) ?? 'Выберите время',
-                      style: TextStyle(fontSize: 14),
+                      style: const TextStyle(fontSize: 14),
                     ),
                     onTap: () => _selectTime(true),
                   ),
@@ -314,14 +373,13 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                     title: const Text('Конец'),
                     trailing: Text(
                       _endTime?.format(context) ?? 'Выберите время',
-                      style: TextStyle(fontSize: 14),
+                      style: const TextStyle(fontSize: 14),
                     ),
                     onTap: () => _selectTime(false),
                   ),
                 ],
               ),
             ),
-
             _buildSectionTitle('Напоминание'),
             Card(
               color: Colors.white,
@@ -371,7 +429,6 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                 ),
               ),
             ),
-
             _buildSectionTitle('Ученик'),
             Card(
               color: Colors.white,
@@ -410,71 +467,68 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                 ),
               ),
             ),
-
-            _buildSectionTitle('Дублирование'),
-            Card(
-              color: Colors.white,
-              margin: const EdgeInsets.symmetric(vertical: 4.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              child: Column(
-                children: [
-                  CheckboxListTile(
-                    title: const Text(
-                      'Продублировать занятия в указанный день недели',
+            if (widget.lessonToEdit == null) ...[
+              _buildSectionTitle('Дублирование'),
+              Card(
+                color: Colors.white,
+                margin: const EdgeInsets.symmetric(vertical: 4.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0),
+                ),
+                child: Column(
+                  children: [
+                    CheckboxListTile(
+                      title: const Text(
+                        'Продублировать занятия в указанный день недели',
+                      ),
+                      value: _duplicateLessons,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _duplicateLessons = value ?? false;
+                        });
+                        _validateForm();
+                      },
+                      controlAffinity: ListTileControlAffinity.leading,
+                      activeColor: Colors.deepPurple,
                     ),
-                    value: _duplicateLessons,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _duplicateLessons = value ?? false;
-                        if (_duplicateLessons) {
-                          _applyToFutureLessons = false;
-                        }
-                      });
-                      _validateForm();
-                    },
-                    controlAffinity: ListTileControlAffinity.leading,
-                    activeColor: Colors.deepPurple,
-                  ),
-                  if (_duplicateLessons) ...[
-                    const Divider(height: 1, indent: 16, endIndent: 16),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.calendar_today,
-                        color: Colors.deepPurple,
+                    if (_duplicateLessons) ...[
+                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.calendar_today,
+                          color: Colors.deepPurple,
+                        ),
+                        title: const Text('С'),
+                        trailing: Text(
+                          _duplicationStartDate == null
+                              ? 'Выберите дату'
+                              : DateFormat(
+                                  'dd.MM.yy',
+                                ).format(_duplicationStartDate!),
+                        ),
+                        onTap: () => _selectDuplicationDate(true),
                       ),
-                      title: const Text('С'),
-                      trailing: Text(
-                        _duplicationStartDate == null
-                            ? 'Выберите дату'
-                            : DateFormat(
-                                'dd.MM.yy',
-                              ).format(_duplicationStartDate!),
+                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.calendar_today,
+                          color: Colors.deepPurple,
+                        ),
+                        title: const Text('По'),
+                        trailing: Text(
+                          _duplicationEndDate == null
+                              ? 'Выберите дату'
+                              : DateFormat(
+                                  'dd.MM.yy',
+                                ).format(_duplicationEndDate!),
+                        ),
+                        onTap: () => _selectDuplicationDate(false),
                       ),
-                      onTap: () => _selectDuplicationDate(true),
-                    ),
-                    const Divider(height: 1, indent: 16, endIndent: 16),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.calendar_today,
-                        color: Colors.deepPurple,
-                      ),
-                      title: const Text('По'),
-                      trailing: Text(
-                        _duplicationEndDate == null
-                            ? 'Выберите дату'
-                            : DateFormat(
-                                'dd.MM.yy',
-                              ).format(_duplicationEndDate!),
-                      ),
-                      onTap: () => _selectDuplicationDate(false),
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-
+            ],
             if (widget.lessonToEdit != null) ...[
               _buildSectionTitle('Массовое редактирование'),
               Card(
@@ -493,9 +547,6 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                       onChanged: (bool? value) {
                         setState(() {
                           _applyToFutureLessons = value ?? false;
-                          if (_applyToFutureLessons) {
-                            _duplicateLessons = false;
-                          }
                         });
                         _validateForm();
                       },
@@ -506,7 +557,6 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                 ),
               ),
             ],
-
             _buildSectionTitle('Примечания'),
             Column(
               children: [
@@ -528,7 +578,7 @@ class _AddLessonScreenState extends State<AddLessonScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 50.0), // Отступ после карточки
+                const SizedBox(height: 50.0),
               ],
             ),
           ],

@@ -12,8 +12,8 @@ import 'package:rephelp/screens/analytics_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('ru_RU', null);
-  await AppDatabase().database;
   await NotificationService.init();
+  await AppDatabase().database;
   runApp(const RepHelpApp());
 }
 

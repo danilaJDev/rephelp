@@ -28,7 +28,7 @@ class AppDatabase {
 
     return await openDatabase(
       path,
-      version: 8,
+      version: 9,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -61,6 +61,7 @@ class AppDatabase {
         price REAL,
         is_homework_sent INTEGER NOT NULL DEFAULT 0,
         is_hidden INTEGER NOT NULL DEFAULT 0,
+        is_hidden_in_finance INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
       )
     ''');
@@ -133,6 +134,11 @@ class AppDatabase {
     if (oldVersion < 8) {
       await db.execute(
         'ALTER TABLE lessons ADD COLUMN is_hidden INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+    if (oldVersion < 9) {
+      await db.execute(
+        'ALTER TABLE lessons ADD COLUMN is_hidden_in_finance INTEGER NOT NULL DEFAULT 0',
       );
     }
   }
@@ -344,6 +350,26 @@ class AppDatabase {
     );
   }
 
+  Future<void> updateLessonIsHiddenInSchedule(int lessonId, bool isHidden) async {
+    final db = await database;
+    await db.update(
+      'lessons',
+      {'is_hidden': isHidden ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [lessonId],
+    );
+  }
+
+  Future<void> updateLessonIsHiddenInFinance(int lessonId, bool isHidden) async {
+    final db = await database;
+    await db.update(
+      'lessons',
+      {'is_hidden_in_finance': isHidden ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [lessonId],
+    );
+  }
+
   Future<List<Map<String, dynamic>>> getFinancialData({
     List<int>? studentIds,
   }) async {
@@ -354,6 +380,7 @@ class AppDatabase {
       lessons.start_time,
       lessons.end_time,
       lessons.is_paid,
+      lessons.is_hidden_in_finance,
       students.name,
       students.surname,
       lessons.price,

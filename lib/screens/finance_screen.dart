@@ -319,6 +319,39 @@ class _ClassesViewState extends State<ClassesView> {
     await _loadFinancialData(withSpinner: false);
   }
 
+  Future<void> _hideLesson(int lessonId) async {
+    await _database.updateLessonIsHiddenInFinance(lessonId, true);
+    await _loadFinancialData(withSpinner: false);
+  }
+
+  void _showHideConfirmationDialog(int lessonId) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Скрыть занятие',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text('Вы уверены, что хотите скрыть это занятие?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Отмена'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: const Text('Подтвердить'),
+              onPressed: () async {
+                await _hideLesson(lessonId);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showViewAgendaDialog() {
     showDialog(
       context: context,
@@ -507,9 +540,14 @@ class _ClassesViewState extends State<ClassesView> {
     _groupedFinancialData.forEach((studentName, lessons) {
       final filteredLessons = lessons.where((lesson) {
         final isPaid = lesson['is_paid'] == 1;
+        final isHidden = lesson['is_hidden_in_finance'] == 1;
         final lessonDate = DateTime.fromMillisecondsSinceEpoch(
           lesson['start_time'],
         );
+
+        if (isHidden) {
+          return false;
+        }
 
         bool viewModeFilter = true;
         if (_viewMode == 'paid') {
@@ -684,13 +722,47 @@ class _ClassesViewState extends State<ClassesView> {
                         ),
                       ],
                     ),
-                    trailing: Text(
-                      '$price руб.',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: priceColor,
-                      ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '$price руб.',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: priceColor,
+                          ),
+                        ),
+                        if (!isFuture && isPaid)
+                          Row(
+                            children: [
+                              const SizedBox(width: 10),
+                              Container(
+                                width: 45,
+                                height: 45,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.grey,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  icon: const Icon(
+                                    Icons.visibility_off,
+                                    color: Colors.grey,
+                                    size: 24,
+                                  ),
+                                  onPressed: () => _showHideConfirmationDialog(
+                                    lesson['id'] as int,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
                     ),
                     onTap: () =>
                         _toggleLessonPaidStatus(lesson['id'] as int, isPaid),

@@ -1,4 +1,4 @@
-package com.example.rephelp
+package dr.rephelp
 
 import io.flutter.embedding.android.FlutterActivity
 

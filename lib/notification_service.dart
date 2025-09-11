@@ -45,6 +45,7 @@ class NotificationService {
             AndroidFlutterLocalNotificationsPlugin>();
     if (androidImplementation != null) {
       await androidImplementation.requestNotificationsPermission();
+      await androidImplementation.requestExactAlarmsPermission();
     }
 
 
